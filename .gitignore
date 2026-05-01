@@ -1,0 +1,20 @@
+# Gradle / build outputs
+**/build/
+**/.gradle/
+local.properties
+**/local.properties
+
+# IDE
+**/*.iml
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Future release artifacts (Phase 12)
+app/release/
+app/app/release/
+
+# NDK / native build caches
+**/.cxx/

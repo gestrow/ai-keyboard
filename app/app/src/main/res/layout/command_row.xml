@@ -24,7 +24,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="14sp"
-            android:textColor="?android:attr/textColorPrimary"
             android:singleLine="true"
             android:ellipsize="end"
             android:text="@string/ai_persona_default_label" />
@@ -35,7 +34,6 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:textSize="14sp"
-            android:textColor="?android:attr/textColorSecondary"
             android:text="@string/ai_persona_chevron" />
     </LinearLayout>
 

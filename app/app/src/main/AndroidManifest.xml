@@ -90,6 +90,12 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             android:theme="@style/TransparentActivityTheme" android:excludeFromRecents="true" android:noHistory="true"
             android:windowSoftInputMode="adjustResize|stateAlwaysVisible" android:configChanges="orientation|screenSize"/>
 
+        <activity
+            android:name="com.aikeyboard.app.ai.ui.AiSettingsActivity"
+            android:label="@string/ai_settings_title"
+            android:exported="false"
+            android:theme="@style/platformActivityTheme" />
+
         <!-- Broadcast receivers -->
         <receiver android:name="SystemBroadcastReceiver"
                 android:exported="true">

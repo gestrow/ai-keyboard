@@ -12,3 +12,10 @@
 # after upgrading to gradle 8, stack traces contain "unknown source"
 -keepattributes SourceFile,LineNumberTable
 -dontobfuscate
+
+# AI Keyboard: androidx.security:security-crypto pulls in Tink, which references
+# error-prone / javax annotations that aren't on the runtime classpath.
+# These are compile-time annotations only; safe to ignore for R8.
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn javax.annotation.**
+-dontwarn javax.annotation.concurrent.**

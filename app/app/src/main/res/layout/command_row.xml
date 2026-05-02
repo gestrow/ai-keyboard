@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AI Keyboard command row. Sits above HeliBoard's suggestion strip; purely additive.
+    SPDX-License-Identifier: Apache-2.0
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <LinearLayout
+        android:id="@+id/cmd_persona_selector"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="8dp"
+        android:contentDescription="@string/ai_command_row_persona_selector_desc">
+
+        <TextView
+            android:id="@+id/cmd_persona_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="@string/ai_persona_default_label" />
+
+        <TextView
+            android:id="@+id/cmd_persona_chevron"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:text="@string/ai_persona_chevron" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/cmd_ai_toggle"
+        android:layout_width="44dp"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_ai_toggle"
+        android:contentDescription="@string/ai_command_row_ai_toggle_desc" />
+
+    <ImageButton
+        android:id="@+id/cmd_read_respond"
+        android:layout_width="44dp"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_read_respond"
+        android:contentDescription="@string/ai_command_row_read_respond_desc" />
+
+    <ImageButton
+        android:id="@+id/cmd_sticker"
+        android:layout_width="44dp"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_sticker"
+        android:contentDescription="@string/ai_command_row_sticker_desc" />
+
+    <ImageButton
+        android:id="@+id/cmd_settings"
+        android:layout_width="44dp"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_ai_settings_gear"
+        android:contentDescription="@string/ai_command_row_settings_desc" />
+
+</merge>

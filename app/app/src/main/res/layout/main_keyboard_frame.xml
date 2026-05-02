@@ -12,6 +12,12 @@
     android:layout_gravity="bottom"
     android:orientation="vertical" >
 
+    <com.aikeyboard.app.ai.commandrow.CommandRowView
+        android:id="@+id/ai_command_row"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_gravity="top" />
+
     <include
         android:id="@+id/strip_container"
         layout="@layout/strip_container" />

@@ -35,6 +35,9 @@ import android.view.inputmethod.InlineSuggestionsResponse;
 import android.view.inputmethod.InputMethodSubtype;
 
 import com.aikeyboard.app.accessibility.AccessibilityUtils;
+import com.aikeyboard.app.ai.commandrow.CommandRowController;
+import com.aikeyboard.app.ai.commandrow.CommandRowView;
+import com.aikeyboard.app.ai.storage.SecureStorage;
 import com.aikeyboard.app.compat.ConfigurationCompatKt;
 import com.aikeyboard.app.compat.EditorInfoCompatUtils;
 import com.aikeyboard.app.compat.ImeCompat;
@@ -135,6 +138,7 @@ public class LatinIME extends InputMethodService implements
     private View mInputView;
     private InsetsOutlineProvider mInsetsUpdater;
     private SuggestionStripView mSuggestionStripView;
+    private CommandRowController mCommandRowController;
 
     private RichInputMethodManager mRichImm;
     final KeyboardSwitcher mKeyboardSwitcher;
@@ -751,6 +755,13 @@ public class LatinIME extends InputMethodService implements
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
         KtxKt.updateSoftInputWindowLayoutParameters(this, mInputView);
         updateSuggestionStripView(view);
+        bindCommandRow(view);
+    }
+
+    private void bindCommandRow(final View view) {
+        final CommandRowView row = view.findViewById(R.id.ai_command_row);
+        if (row == null) return;
+        mCommandRowController = new CommandRowController(this, row, SecureStorage.Companion.getInstance(this));
     }
 
     public void updateSuggestionStripView(View view) {
@@ -1189,7 +1200,12 @@ public class LatinIME extends InputMethodService implements
             return;
         }
         final int stripHeight = mKeyboardSwitcher.isShowingStripContainer() ? mKeyboardSwitcher.getStripContainer().getHeight() : 0;
-        int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight;
+        // Our command row sits above HeliBoard's strip_container; without including its height
+        // the IME's touchable region stops at the strip and taps on the command row fall through
+        // to the underlying app and dismiss the keyboard.
+        final View commandRow = mInputView.findViewById(R.id.ai_command_row);
+        final int commandRowHeight = (commandRow != null && commandRow.isShown()) ? commandRow.getHeight() : 0;
+        int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight - commandRowHeight;
 
         if (hasSuggestionStripView()) {
             mSuggestionStripView.setMoreSuggestionsHeight(visibleTopY);

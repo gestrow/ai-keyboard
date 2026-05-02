@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Strings introduced by AI Keyboard (Phase 2+). Kept in a dedicated file so additions
+    on top of HeliBoard's upstream string set are easy to review. Translations land in
+    Phase 12 polish; tools:ignore suppresses the lint-baseline pollution that would
+    otherwise occur for every new string until then.
+    SPDX-License-Identifier: Apache-2.0
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MissingTranslation">
+    <string name="ai_settings_title">AI Keyboard Settings</string>
+    <string name="ai_command_row_persona_selector_desc">Select AI persona</string>
+    <string name="ai_command_row_ai_toggle_desc">Toggle AI assist</string>
+    <string name="ai_command_row_read_respond_desc">Read screen and respond</string>
+    <string name="ai_command_row_sticker_desc">Open stickers</string>
+    <string name="ai_command_row_settings_desc">Open AI settings</string>
+    <string name="ai_persona_default_label">Persona</string>
+    <string name="ai_persona_chevron" translatable="false">▾</string>
+
+    <string name="ai_settings_personas_title">Personas</string>
+    <string name="ai_settings_persona_new">New persona</string>
+    <string name="ai_settings_persona_edit">Edit persona</string>
+    <string name="ai_settings_persona_name">Name</string>
+    <string name="ai_settings_persona_system_prompt">System prompt</string>
+    <string name="ai_settings_persona_few_shots">Few-shot examples</string>
+    <string name="ai_settings_persona_few_shot_user">User input</string>
+    <string name="ai_settings_persona_few_shot_assistant">Assistant response</string>
+    <string name="ai_settings_persona_add_few_shot">Add example</string>
+    <string name="ai_settings_persona_remove_few_shot">Remove example</string>
+    <string name="ai_settings_persona_save">Save</string>
+    <string name="ai_settings_persona_cancel">Cancel</string>
+    <string name="ai_settings_persona_delete">Delete</string>
+    <string name="ai_settings_persona_builtin_locked">Built-in personas cannot be deleted. Edit them in place to customize.</string>
+    <string name="ai_settings_persona_empty_name">Name cannot be empty</string>
+</resources>

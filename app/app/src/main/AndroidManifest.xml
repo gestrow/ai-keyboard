@@ -109,7 +109,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
 
         <!-- necessary for sending mail attachments, remove when data gathering phase is done (end of 2026 latest) -->
         <provider android:name="com.aikeyboard.app.settings.screens.gesturedata.GestureFileProvider"
-            android:authorities="@string/gesture_data_provider_authority"
+            android:authorities="${applicationId}.provider"
             android:enabled="true"
             android:grantUriPermissions="true"
             android:exported="false">

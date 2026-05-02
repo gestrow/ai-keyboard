@@ -8,6 +8,7 @@ How to grade the output of each phase before writing the next phase's prompt. Ap
 - [ ] `./gradlew assembleFdroidDebug` succeeds with no warnings about deprecated APIs introduced this phase
 - [ ] `./gradlew assemblePlayDebug` succeeds **and** the resulting APK does not contain `ScreenReaderService` references (verify with `./gradlew :app:dependencies` + `apkanalyzer dex packages`)
 - [ ] `./gradlew lint` produces no new errors; warnings reviewed and triaged
+- [ ] **No new entries added to `lint-baseline.xml`** this phase. Baseline absorbs upstream HeliBoard's inherited issues only; our code must lint clean. Verify with `git diff lint-baseline.xml` — should be empty for any phase after Phase 1.
 - [ ] `./gradlew test` passes (unit tests added this phase + all prior tests)
 - [ ] No new `TODO` / `FIXME` / `XXX` comments introduced without a tracking note
 
@@ -105,7 +106,7 @@ Template:
 - **JDK pinned via `gradle.properties`**: `org.gradle.java.home` set explicitly to a JDK 21 install path, OR `kotlin { jvmToolchain(21) }` in `app/build.gradle.kts` so Gradle auto-provisions JDK 21 regardless of the system `JAVA_HOME` (user has JDK 25 system-wide; do not rely on it)
 - **Reproducible-build flags** in `gradle.properties`: `android.enableR8.fullMode=false` plus the standard reproducibility set (`org.gradle.parallel=true`, `org.gradle.caching=true`); a TODO note in `app/UPSTREAM.md` if full byte-identical reproducibility requires more config — Phase 12 will finish this
 - `applicationId` is your namespace (not HeliBoard's); rename complete in **manifest, package directories, Gradle, all `res/xml/` files, and any string-based authorities (`FileProvider`, `ContentProvider`)**
-- Grep for `helium314` in `app/` returns zero results (verifies the rename was thorough — HeliBoard uses the string in places `find -type d` won't catch)
+- **Case-sensitive** grep for `helium314` in `app/` source (excluding upstream-attribution comments and provenance docs) returns zero results. Use `grep -r "helium314" app/ --exclude-dir=build --exclude-dir=.gradle` (no `-i` flag). URL references to `github.com/Helium314/...` and the provenance pointer in `UPSTREAM.md` are correct attribution and **must** stay.
 - HeliBoard's existing `SettingsActivity` and `Preference` framework usage is **preserved untouched** (Phase 2 will add a parallel `AiSettingsActivity`, not modify the existing one)
 - A `COMPOSE_USAGE.md` note in `app/` documents whether HeliBoard already uses Compose anywhere (some recent versions do); this informs Phase 2's dependency strategy
 - App icon + name distinguish from upstream HeliBoard so they can coexist on a device
@@ -115,8 +116,13 @@ Template:
 
 **Smoke test:**
 - Install fdroid debug APK on a device; verify keyboard renders and types into a notes app
-- Install play debug APK on a different device or after uninstall; verify same
+- Install play debug APK alongside (different `applicationId` permits side-by-side install) and verify same
 - Confirm app shows up in *Settings → System → Languages & input → On-screen keyboard*
+- Logcat during typing is clean (no `FATAL EXCEPTION` or `AndroidRuntime` crash referencing `com.aikeyboard.app`); harmless system messages like `Package [...] reported as REPLACED, but missing application info` are not failures — they're emitted by other apps' `ActivityThread` whenever `adb install -r` runs, regardless of our code
+
+**Known HeliBoard upstream behaviors that are NOT Phase 1 regressions:**
+- **Gesture/swipe typing is non-functional** out of the box. HeliBoard cannot redistribute Google's proprietary glide-typing library; users supply their own `.so` file via HeliBoard's settings. Verify the absence by checking against an unmodified upstream HeliBoard install if there's any doubt.
+- Inherited lint warnings absorbed by `lint-baseline.xml` (translations, etc.)
 
 **Out of scope this phase (don't accept if introduced):**
 - Any AI / networking code

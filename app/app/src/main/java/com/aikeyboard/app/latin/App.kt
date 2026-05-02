@@ -2,6 +2,7 @@
 package com.aikeyboard.app.latin
 
 import android.app.Application
+import com.aikeyboard.app.ai.setup.FirstRunDefaults
 import com.aikeyboard.app.keyboard.emoji.SupportedEmojis
 import com.aikeyboard.app.latin.define.DebugFlags
 import com.aikeyboard.app.latin.settings.Defaults
@@ -22,6 +23,7 @@ class App : Application() {
         AppUpgrade.transferOldPinnedClips(this) // todo: remove in a few months, maybe mid 2026
         app = this
         Defaults.initDynamicDefaults(this)
+        FirstRunDefaults.apply(this)
         LayoutUtilsCustom.removeMissingLayouts(this) // only after version upgrade
         SupportedEmojis.load(this)
 

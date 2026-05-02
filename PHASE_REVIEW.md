@@ -62,6 +62,15 @@ If any of these surface during review, do **not** proceed to the next phase. Fix
 - Compose code introduced inside the keyboard surface itself (not the settings activity) — drift from locked decision #1
 - Anything calls `Log.d` / `println` with text that came from `InputConnection` or the screen reader
 
+## Keyboard-surface UI invariants (apply to any phase that adds UI on the IME view)
+
+Adopted in Phase 2.5 after device testing in Phase 2 surfaced both. Any phase that adds new UI on the keyboard surface (not in `AiSettingsActivity`) must hold these invariants:
+
+- [ ] **Runtime color sourcing.** UI sources colors from HeliBoard's `Settings.getValues().mColors` with `ColorType.*` semantic types (`STRIP_BACKGROUND`, `TOOL_BAR_KEY`, `KEY_TEXT`, etc.) — **not** from app-level theme attrs (`?android:attr/textColorPrimary`, etc.). Theme attrs resolve against the IME's app theme, which doesn't match the user's selected keyboard theme; result is invisible/illegible icons on most HeliBoard themes. Reference: `SuggestionStripView.kt` already does it correctly.
+- [ ] **Touchable region extension.** Any view added *above* HeliBoard's `strip_container` must update the inset calculation in `LatinIME.onComputeInsets` (subtract the new view's height from `visibleTopY`) **or** reuse the existing command row's host. Otherwise taps on the new UI fall through to the underlying app and dismiss the keyboard. The Phase 2 `onComputeInsets` patch is the template; a single `visibleTopY` calculation is shared for all above-strip UI — extend it, don't duplicate it.
+
+Phases this applies to: 3 (AI streaming preview strip), 7b (Read & Respond integration if any new strip UI), 8 (kill-switch indicator), 9 (sticker preview surface).
+
 ## Phase output evaluation rubric
 
 For each phase, score 0–3 on these dimensions. Anything below a 2 means iterate before moving on:
@@ -145,19 +154,48 @@ Template:
 - Inspect `/data/data/<package>/shared_prefs/` via `adb shell run-as` — file is encrypted (binary, not readable)
 - Persona dropdown in command row reflects the persisted list
 
-### Phase 3 — RemoteApiBackend (Anthropic + Google) end-to-end
+### Phase 2.5 — Chrome polish (toolbar default + show toggle)
+
+Inserted after Phase 2 because device testing revealed chrome density and theme-contrast issues that affect every subsequent UI phase. Narrow scope by design: defer everything that isn't toolbar mode + toggle + invariant codification.
 
 **Done means:**
+- HeliBoard's `Defaults.PREF_TOOLBAR_MODE` (or equivalent first-run pref-default mechanism) set to `SUGGESTION_STRIP` — keeps word predictions visible, hides HeliBoard's gear/mic/clipboard/undo/redo toolbar by default
+- Show-toggle added to `AiSettingsActivity` ("Show HeliBoard toolbar"); flips between `SUGGESTION_STRIP` (off) and `EXPANDABLE` (on, HeliBoard's original default). Writes to HeliBoard's existing `Settings.PREF_TOOLBAR_MODE` SharedPreferences key — **persistent** across keyboard restarts (distinct from privacy-axis toggles in Phase 8 which mandate default-off-on-restart)
+- Toggle state survives app process kill + relaunch
+- HeliBoard's full settings remain reachable through the launcher icon (escape hatch — users can still access advanced HeliBoard prefs)
+- Both flavors build; lint clean; no new lint-baseline entries
+- Smoke test on Pixel 6 Pro: fresh install of fdroid debug → command row visible, HeliBoard toolbar hidden, suggestions still visible. Toggle on → HeliBoard toolbar appears below suggestions. Toggle off → returns to default. Restart app → toggle state preserved.
+
+**Out of scope this phase (don't accept if introduced):**
+- Chevron/swipe toggle on the command row (deferred; settings-only is the v1 path)
+- Visual density tuning of our command row (defer to Phase 12 polish unless it's a regression from Phase 2)
+- Any AI / networking / a11y / Termux code
+- Touching `SecureStorage` (Phase 3 owns that)
+
+**Smoke test additions:**
+- Verify `getSharedPreferences("com.aikeyboard.app_preferences", MODE_PRIVATE).getString("toolbar_mode", null)` (or whatever HeliBoard's actual pref key is — find it before writing the prompt) reads `SUGGESTION_STRIP` after first launch with no user intervention
+- Verify the toggle in settings actually flips this pref value (`adb shell run-as ... cat shared_prefs/...` before and after)
+
+### Phase 3 — RemoteApiBackend (Anthropic + Google) end-to-end + SecureStorage modernization
+
+**Done means:**
+- **`SecureStorage` migrated off deprecated `EncryptedSharedPreferences`.** Replacement target: Tink-backed `EncryptedFile` for keysets + Jetpack DataStore for non-secret state, OR direct Keystore `KeyGenerator` + AES-GCM blob storage. Both personas (Phase 2 data) and API keys (Phase 3 new data) end up on the new storage. **Migration must preserve existing persona data** for users who installed Phase 2 first — read old prefs once, write new format, delete old prefs file.
 - `AiClient` interface defined; `BackendStrategy` enum with `REMOTE_API`, `LOCAL_LAN`, `TERMUX_BRIDGE`
 - `RemoteApiBackend` implements Anthropic Messages API and Gemini `generateContent` with streaming
-- API key entry UI in settings (one field per provider, masked); keys stored in `SecureStorage`
+- API key entry UI in settings (one field per provider, masked); keys stored in (modernized) `SecureStorage`
+- `android.permission.INTERNET` declared in `app/src/main/AndroidManifest.xml` (HeliBoard ships without it, per Phase 2's note)
 - "Rewrite with AI" button in command row: takes current text-field content via `InputConnection`, sends to selected provider with selected persona's system prompt, streams response into a preview strip, commits on tap
+- Streaming preview strip lives **above** the suggestion strip (alongside our command row) — verify it follows the keyboard-surface UI invariants (runtime `Colors`, inset region updated)
 - Errors surface to user as toast or strip (no silent failures)
+- HTTPS client (Ktor or OkHttp): pinned version, dedicated `-keep` rules added to `proguard-rules.pro`
 
 **Smoke test:**
-- Type "this is a draft email" in any text field, tap Rewrite, verify a real LLM response appears
+- Fresh install on a device with no prior Phase 2 install: API keys + personas both work
+- Upgrade install over a Phase 2 build: existing personas survive the storage migration (verify via `adb shell run-as ... ls shared_prefs/` shows the new file format and old `ai_keyboard_secure.prefs.xml` is deleted)
+- Type "this is a draft email" in any text field, tap Rewrite, verify a real LLM response appears in the preview strip
 - Disable network mid-stream — verify graceful error message, no crash
 - Clear API key, attempt Rewrite — verify clear "no key configured" message
+- Tap on the streaming preview strip area while it's showing — keyboard does not dismiss (verifies inset region was extended for it, per the keyboard-surface UI invariants)
 
 ### Phase 4 — Termux bridge (Node) for Claude + Gemini
 

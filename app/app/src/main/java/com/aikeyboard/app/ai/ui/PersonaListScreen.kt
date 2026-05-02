@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 fun PersonaListScreen(
     onCreate: () -> Unit,
     onEdit: (String) -> Unit,
+    onOpenKeyboardChrome: () -> Unit,
 ) {
     val context = LocalContext.current
     val storage = remember { SecureStorage.getInstance(context) }
@@ -64,7 +65,19 @@ fun PersonaListScreen(
     LaunchedEffect(Unit) { reload() }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.ai_settings_personas_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.ai_settings_personas_title)) },
+                actions = {
+                    IconButton(onClick = onOpenKeyboardChrome) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_settings_advanced),
+                            contentDescription = stringResource(R.string.ai_settings_keyboard_chrome_title),
+                        )
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onCreate) {
                 Icon(

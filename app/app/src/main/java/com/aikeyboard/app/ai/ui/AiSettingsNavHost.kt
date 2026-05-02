@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 object AiSettingsRoutes {
     const val PERSONAS_LIST = "personas/list"
     const val PERSONAS_EDIT = "personas/edit"
+    const val KEYBOARD_CHROME = "keyboard/chrome"
     const val ARG_PERSONA_ID = "personaId"
 
     fun editRoute(personaId: String? = null): String =
@@ -24,7 +25,8 @@ fun AiSettingsNavHost() {
         composable(AiSettingsRoutes.PERSONAS_LIST) {
             PersonaListScreen(
                 onCreate = { nav.navigate(AiSettingsRoutes.editRoute(null)) },
-                onEdit = { id -> nav.navigate(AiSettingsRoutes.editRoute(id)) }
+                onEdit = { id -> nav.navigate(AiSettingsRoutes.editRoute(id)) },
+                onOpenKeyboardChrome = { nav.navigate(AiSettingsRoutes.KEYBOARD_CHROME) },
             )
         }
         composable(
@@ -43,6 +45,9 @@ fun AiSettingsNavHost() {
                 personaId = id,
                 onDone = { nav.popBackStack() }
             )
+        }
+        composable(AiSettingsRoutes.KEYBOARD_CHROME) {
+            KeyboardChromeScreen(onBack = { nav.popBackStack() })
         }
     }
 }

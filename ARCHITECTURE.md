@@ -173,7 +173,8 @@ Splits applied after scrutiny: phases 5 and 7 are each split into two halves to 
 |---|---|---|
 | 1 | Repo scaffold, HeliBoard fork import, Gradle flavors (fdroid/play), reproducible-build flags, AGP/Kotlin/JDK pinning | 1 prompt |
 | 2 | Command row UI, persona model + `SecureStorage`, `AiSettingsActivity` (Compose) skeleton — additive only, HeliBoard's settings untouched | 1 prompt |
-| 3 | `AiClient` interface + `RemoteApiBackend` for Anthropic & Google; "Rewrite with AI" button works end-to-end with API key | 1–2 prompts |
+| 2.5 | Chrome polish: default HeliBoard's `ToolbarMode = SUGGESTION_STRIP` (keep predictions, hide its toolbar); add show-toggle in `AiSettingsActivity`; codify keyboard-surface invariants (runtime `Colors`, inset region) into `PHASE_REVIEW.md`. Inserted post-Phase-2 because device testing surfaced chrome density and theme-contrast issues that affect every subsequent phase's UI. | 1 prompt |
+| 3 | `AiClient` interface + `RemoteApiBackend` for Anthropic & Google; "Rewrite with AI" button works end-to-end with API key. **Also: modernize `SecureStorage` away from deprecated `EncryptedSharedPreferences`** (Tink keysets via `androidx.security:security-app-authenticator` or Jetpack DataStore + `EncryptedFile`), since this phase doubles down on the storage layer for API keys. | 1–2 prompts |
 | 4 | Bridge: Node project (fastify + subprocess adapters), Claude + Gemini adapters, /chat /health /providers endpoints, SSE; **also: `networkSecurityConfig.xml` with localhost cleartext entry**; **also: experimental `RUN_COMMAND` validation harness in a debug Activity** | 1 prompt |
 | 5a | `setup.sh` bootstrap — complete and testable on a real device in Termux, no IME involvement yet | 1 prompt |
 | 5b | `TermuxOrchestrator` Kotlin class + IME's Termux setup wizard with health polling | 1 prompt |

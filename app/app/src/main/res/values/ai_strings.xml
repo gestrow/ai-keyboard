@@ -32,4 +32,9 @@
     <string name="ai_settings_persona_delete">Delete</string>
     <string name="ai_settings_persona_builtin_locked">Built-in personas cannot be deleted. Edit them in place to customize.</string>
     <string name="ai_settings_persona_empty_name">Name cannot be empty</string>
+
+    <string name="ai_settings_back">Back</string>
+    <string name="ai_settings_keyboard_chrome_title">Keyboard layout</string>
+    <string name="ai_settings_show_heliboard_toolbar_title">Show HeliBoard toolbar</string>
+    <string name="ai_settings_show_heliboard_toolbar_desc">When on, HeliBoard\'s clipboard, voice input, and other shortcuts appear below the suggestion strip. When off, only word suggestions are shown.</string>
 </resources>

@@ -26,12 +26,43 @@ This phase introduces a **new top-level deliverable**: a Node.js HTTP bridge tha
 The executor cannot reasonably do these for the user. Confirm with the human reviewer that the following are in place on the Pixel 6 Pro **before running the device-side smoke test**:
 
 - [ ] Termux installed (F-Droid or GitHub APK)
-- [ ] In Termux: `pkg update && pkg install -y nodejs git`
-- [ ] In Termux: `npm i -g @anthropic-ai/claude-code @google/gemini-cli`
-- [ ] In Termux: `claude` run once interactively to complete the OAuth flow (browser opens, user logs in to claude.ai)
-- [ ] In Termux: `gemini` run once interactively to complete OAuth (browser opens, user logs in to a Google account)
+- [ ] In Termux: `pkg update && pkg install -y nodejs git which`
+- [ ] In Termux: **Claude Code installed via version pin + snapshot + wrapper + autoupdater disabled** (per `PHASE_REVIEW.md` "Known accepted corner cases" / `ARCHITECTURE.md` "Termux CLI compatibility constraints"):
+  ```bash
+  # Disable Claude Code's built-in autoupdater BEFORE first launch (else it npm-i's latest at runtime)
+  echo 'export DISABLE_AUTOUPDATER=1' >> ~/.profile
+  echo 'export DISABLE_AUTOUPDATER=1' >> ~/.bashrc
+  source ~/.profile
 
-If the user has not done these, the *bridge unit tests* still pass (subprocess is mocked), the *bridge `/health` endpoint* still responds, but the *real-CLI streaming integration test* must be skipped and documented. Do **not** block Phase 4 ship on user prerequisites you can't fulfill — surface the gap in the summary.
+  # Pin version (≥ v2.1.113 ships glibc-only native binary, broken on Termux)
+  npm i -g @anthropic-ai/claude-code@2.1.112
+
+  # Snapshot into ~/ where npm cannot touch it; wrapper points here, not the npm path
+  rm -rf ~/claude-code-pinned
+  cp -r /data/data/com.termux/files/usr/lib/node_modules/@anthropic-ai/claude-code ~/claude-code-pinned
+
+  # Wrapper script
+  mkdir -p ~/bin
+  cat > ~/bin/claude << 'EOF'
+  #!/data/data/com.termux/files/usr/bin/bash
+  exec node $HOME/claude-code-pinned/cli.js "$@"
+  EOF
+  chmod +x ~/bin/claude
+
+  # Symlink into Termux's prefix bin (always on PATH; sidesteps shell-init-file quirks
+  # since Termux's bash starts as a login shell and doesn't source ~/.bashrc by default)
+  ln -sf ~/bin/claude /data/data/com.termux/files/usr/bin/claude
+
+  # Optional belt-and-suspenders if your Claude version supports it
+  claude config set -g autoUpdates false 2>/dev/null || true
+  ```
+  Then `claude` interactively to complete OAuth (claude.ai login).
+- [ ] In Termux: `npm i -g @google/gemini-cli`, then `gemini auth login` to complete OAuth (Google account).
+- [ ] In Termux: `echo 'allow-external-apps = true' >> ~/.termux/termux.properties && termux-reload-settings` (required for the `RUN_COMMAND` validation harness).
+
+If any prereq is missing, the *bridge unit tests* still pass (subprocess is mocked), the *bridge `/health` endpoint* still responds, but the corresponding *real-CLI integration test* must be skipped and documented. Do **not** block Phase 4 ship on user prerequisites you can't fulfill — surface the gap in the summary.
+
+**Important for the `claude` adapter:** because Claude Code is invoked via a wrapper script at `~/bin/claude`, the bridge's PATH-discovery (`which claude` or equivalent) must find the wrapped binary, not the original `npm`-installed launcher (which is broken on Termux). Adding `~/bin` to `PATH` accomplishes this — verify with `which claude` returning `/data/data/com.termux/files/home/bin/claude`. The bridge does not need any special handling for the wrapper; `child_process.spawn('claude', ...)` resolves through `PATH` and runs the wrapper, which in turn execs `node cli.js`.
 
 ## Tasks
 

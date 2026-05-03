@@ -156,6 +156,16 @@ android {
 
 `src/fdroid/AndroidManifest.xml` adds the `<service>` for `ScreenReaderService`. `src/play/AndroidManifest.xml` omits it. Source code references guard `BuildConfig.ENABLE_A11Y` so the play flavor compiles without dead service references.
 
+## Termux CLI compatibility constraints
+
+The Termux backend's value depends on user-installed CLIs (`claude`, `gemini`, eventually `codex`) being functional inside Termux's Bionic-libc environment. Each has its own compatibility story:
+
+- **Claude Code (`@anthropic-ai/claude-code`):** ≥ v2.1.113 ships a glibc-only native binary that cannot run on Termux. We pin to **v2.1.112** (the last version with a `cli.js` JS entry point), **snapshot the install into `~/claude-code-pinned/`** (so it's outside npm's reach), and ship a wrapper script at `~/bin/claude` that invokes `node $HOME/claude-code-pinned/cli.js "$@"`. **Critical: Claude Code has a built-in autoupdater that silently `npm i -g`s itself to latest on every launch — we disable it via `DISABLE_AUTOUPDATER=1` in shell init files**, otherwise the pinned install gets clobbered within minutes of first use. The wrapper-points-at-snapshot pattern is belt-and-suspenders against future autoupdater behavior changes. Phase 5a's setup script automates all of this. Post-v1.0 release checklist mandates rechecking whether Anthropic has restored a JS fallback or shipped an aarch64-Bionic build (tracked in `PHASE_REVIEW.md` "Known accepted corner cases" + Phase 12 acceptance criteria).
+- **Gemini CLI (`@google/gemini-cli`):** pure Node, runs natively on Termux. No special handling required.
+- **Codex CLI (`@openai/codex`, Phase 11):** install method to be validated when Phase 11 lands; if it has a similar Bionic incompatibility, Phase 11's prompt will document the workaround.
+
+**Forward-looking maintenance commitment:** every project release that ships any change to the bridge or setup script must verify that the pinned CLI versions are still the most-recent-compatible. The compatibility check is part of every release's smoke test; the pinned version is recorded in `setup/setup.sh` as the source of truth for the install command.
+
 ## Out of scope for v1
 
 - TTS read-aloud of screen content (planned v2)

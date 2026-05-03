@@ -66,6 +66,15 @@ If any of these surface during review, do **not** proceed to the next phase. Fix
 
 - **Direct-boot-mode SecureStorage migration:** if `App.onCreate` runs while the device is locked (Direct Boot Aware startup), Tink's Android Keystore is unavailable and the migration's try/catch swallows the failure. The singleton caches empty `SecureData`; subsequent `getPersonas()` returns seeded defaults until the IME process recycles after unlock. **Accepted as-is** through at least Phase 11. Phase 12 polish may add a `UserManager.isUserUnlocked()` gate + retry-on-unlock if real-world reports surface. Discovered Phase 3a; rationale: lock-screen IME usage is uncommon, process recycle re-runs migration, no data is destroyed (old prefs file is preserved on migration failure per Phase 3a's design).
 
+- **Claude Code in Termux requires version pinning + JS-wrapper script + autoupdater disabled.** Anthropic's `@anthropic-ai/claude-code` ≥ v2.1.113 ships only a glibc-built native binary, incompatible with Termux's Bionic libc. Versions ≤ v2.1.112 still ship the `cli.js` JS entry point, which can be invoked via a wrapper script. **Critical compounding issue:** Claude Code has a built-in autoupdater that silently runs `npm i -g @anthropic-ai/claude-code@latest` on every launch — without disabling it, the pinned 2.1.112 install gets clobbered to a broken latest within minutes of first use. **Setup procedure:**
+  1. `npm i -g @anthropic-ai/claude-code@2.1.112`
+  2. **Snapshot the working install to `~/claude-code-pinned/`** (npm-untouched) — `cp -r $(npm root -g)/@anthropic-ai/claude-code ~/claude-code-pinned`. The wrapper points here, not the npm path.
+  3. Create `~/bin/claude` wrapper: `exec node $HOME/claude-code-pinned/cli.js "$@"` with bash shebang; chmod +x
+  4. **Symlink** `~/bin/claude` into `/data/data/com.termux/files/usr/bin/claude` (Termux's prefix bin is always on PATH; PATH-export-to-`~/.bashrc` is unreliable because Termux's bash starts as a login shell and only sources `~/.profile`)
+  5. **Disable the autoupdater:** `export DISABLE_AUTOUPDATER=1` in `~/.profile` AND `~/.bashrc`. Also run `claude config set -g autoUpdates false` if supported.
+  6. Run `claude` once interactively for OAuth flow (claude.ai login)
+  Phase 5a's setup script automates all six steps. **Post-v1.0 maintenance commitment:** before each release, recheck whether a newer Claude Code version (a) restored a JS fallback, or (b) ships an aarch64-Bionic native binary; if so, update the pinned version and bridge wrapper accordingly. Tracked as a Phase 12 task ("verify Claude Code Termux compatibility before release") and as a recurring item in any future post-1.0 release checklist. Discovered Phase 4 prereq investigation; references: anthropics/claude-code#50270, #20778.
+
 ## Keyboard-surface UI invariants (apply to any phase that adds UI on the IME view)
 
 Adopted in Phase 2.5 after device testing in Phase 2 surfaced both. Any phase that adds new UI on the keyboard surface (not in `AiSettingsActivity`) must hold these invariants:
@@ -386,6 +395,12 @@ Inserted after Phase 2 because device testing revealed chrome density and theme-
 - Switch to Codex in IME, run Rewrite — works
 
 ### Phase 12 — Polish + signed F-Droid build
+
+Before this list is appropriate, also verify the **"Known accepted corner cases"** entries above to see whether any have become live blockers worth resolving in this phase. Specific recurring task:
+
+- **Claude Code Termux compatibility recheck (mandatory, every release).** Verify whether `@anthropic-ai/claude-code` latest stable (a) restored the `cli.js` JS entry point, or (b) ships an aarch64-Bionic native binary. If yes, update Phase 5a's `setup.sh` to use the latest stable; if no, confirm the pinned version (currently 2.1.112) is still the latest viable Termux target and document any edge cases. Reference issues: anthropics/claude-code#50270, #20778.
+
+
 
 **Done means:**
 - Onboarding wizard handles every entry path (no Termux, no a11y, only API keys, etc.)

@@ -62,6 +62,10 @@ If any of these surface during review, do **not** proceed to the next phase. Fix
 - Compose code introduced inside the keyboard surface itself (not the settings activity) — drift from locked decision #1
 - Anything calls `Log.d` / `println` with text that came from `InputConnection` or the screen reader
 
+## Known accepted corner cases (do not re-investigate)
+
+- **Direct-boot-mode SecureStorage migration:** if `App.onCreate` runs while the device is locked (Direct Boot Aware startup), Tink's Android Keystore is unavailable and the migration's try/catch swallows the failure. The singleton caches empty `SecureData`; subsequent `getPersonas()` returns seeded defaults until the IME process recycles after unlock. **Accepted as-is** through at least Phase 11. Phase 12 polish may add a `UserManager.isUserUnlocked()` gate + retry-on-unlock if real-world reports surface. Discovered Phase 3a; rationale: lock-screen IME usage is uncommon, process recycle re-runs migration, no data is destroyed (old prefs file is preserved on migration failure per Phase 3a's design).
+
 ## Keyboard-surface UI invariants (apply to any phase that adds UI on the IME view)
 
 Adopted in Phase 2.5 after device testing in Phase 2 surfaced both. Any phase that adds new UI on the keyboard surface (not in `AiSettingsActivity`) must hold these invariants:

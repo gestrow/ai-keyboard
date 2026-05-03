@@ -13,6 +13,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application android:label="@string/english_ime_name"
             android:name="com.aikeyboard.app.latin.App"
@@ -24,6 +25,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             android:directBootAware="true"
             android:enableOnBackInvokedCallback="true"
             android:localeConfig="@xml/locales_config"
+            android:networkSecurityConfig="@xml/network_security_config"
             tools:remove="android:appComponentFactory"
             tools:targetApi="p">
 

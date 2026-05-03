@@ -139,7 +139,21 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.autofill:autofill:1.3.0")
     implementation("androidx.viewpager2:viewpager2:1.1.0")
+    // androidx.security:security-crypto: kept solely for the one-time migration in
+    // SecureStorage from Phase 2's EncryptedSharedPreferences to the Tink AEAD blob.
+    // Phase 12 polish should remove this once we're confident no users have unmigrated state.
     implementation("androidx.security:security-crypto:1.1.0")
+
+    // AI Keyboard: Tink AEAD primitives, used by SecureStorage to encrypt the on-disk
+    // blob that holds personas + API keys. Master keyset wrapped by Android Keystore.
+    implementation("com.google.crypto.tink:tink-android:1.21.0")
+
+    // AI Keyboard: Ktor HTTPS client (OkHttp engine) for streaming Anthropic Messages
+    // and Gemini streamGenerateContent. Phase 3a wires the singleton + request builders;
+    // Phase 3b implements actual response streaming.
+    implementation("io.ktor:ktor-client-okhttp:3.4.3")
+    implementation("io.ktor:ktor-client-content-negotiation:3.4.3")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.3")
 
     // kotlin
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")

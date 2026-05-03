@@ -1,0 +1,16 @@
+<!--
+    SPDX-License-Identifier: Apache-2.0
+    Material chevron-right vector. Compose's painterResource doesn't accept HeliBoard's
+    upstream <rotate>-wrapped ic_arrow_right; this is a plain VectorDrawable replacement
+    used by SettingsHubScreen / BackendsScreen list rows.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:autoMirrored="true"
+    android:height="24dp"
+    android:width="24dp"
+    android:viewportHeight="24"
+    android:viewportWidth="24">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9.29,6.71 L7.88,8.12 11.76,12 7.88,15.88 9.29,17.29 14.59,12 Z" />
+</vector>

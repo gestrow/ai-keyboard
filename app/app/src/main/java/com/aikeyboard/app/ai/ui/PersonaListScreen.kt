@@ -39,9 +39,9 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonaListScreen(
+    onBack: () -> Unit,
     onCreate: () -> Unit,
     onEdit: (String) -> Unit,
-    onOpenKeyboardChrome: () -> Unit,
 ) {
     val context = LocalContext.current
     val storage = remember { SecureStorage.getInstance(context) }
@@ -68,11 +68,11 @@ fun PersonaListScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.ai_settings_personas_title)) },
-                actions = {
-                    IconButton(onClick = onOpenKeyboardChrome) {
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_settings_advanced),
-                            contentDescription = stringResource(R.string.ai_settings_keyboard_chrome_title),
+                            painter = painterResource(R.drawable.ic_arrow_back),
+                            contentDescription = stringResource(R.string.ai_settings_back),
                         )
                     }
                 },

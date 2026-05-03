@@ -3,6 +3,7 @@ package com.aikeyboard.app.latin
 
 import android.app.Application
 import com.aikeyboard.app.ai.setup.FirstRunDefaults
+import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.keyboard.emoji.SupportedEmojis
 import com.aikeyboard.app.latin.define.DebugFlags
 import com.aikeyboard.app.latin.settings.Defaults
@@ -24,6 +25,11 @@ class App : Application() {
         app = this
         Defaults.initDynamicDefaults(this)
         FirstRunDefaults.apply(this)
+        // Eager singleton construction so the Phase 2 → Phase 3a migration runs on
+        // MY_PACKAGE_REPLACED rather than waiting for the keyboard's first user-visible
+        // bind. Migration is no-op for fresh installs, idempotent across processes, and
+        // the lazy `aead` init inside means we don't pay Keystore-init cost here.
+        SecureStorage.getInstance(this)
         LayoutUtilsCustom.removeMissingLayouts(this) // only after version upgrade
         SupportedEmojis.load(this)
 

@@ -37,4 +37,20 @@
     <string name="ai_settings_keyboard_chrome_title">Keyboard layout</string>
     <string name="ai_settings_show_heliboard_toolbar_title">Show HeliBoard toolbar</string>
     <string name="ai_settings_show_heliboard_toolbar_desc">When on, HeliBoard\'s clipboard, voice input, and other shortcuts appear below the suggestion strip. When off, only word suggestions are shown.</string>
+
+    <string name="ai_settings_hub_personas_title">Personas</string>
+    <string name="ai_settings_hub_personas_desc">Manage AI personalities and prompts</string>
+    <string name="ai_settings_hub_keyboard_title">Keyboard layout</string>
+    <string name="ai_settings_hub_keyboard_desc">Toggle HeliBoard\'s toolbar and chrome</string>
+    <string name="ai_settings_hub_backends_title">Backends</string>
+    <string name="ai_settings_hub_backends_desc">Provider API keys and connections</string>
+
+    <string name="ai_settings_backend_status_configured">Configured</string>
+    <string name="ai_settings_backend_status_not_configured">Not configured</string>
+    <string name="ai_settings_backend_api_key_label">API key</string>
+    <string name="ai_settings_backend_show_key">Show key</string>
+    <string name="ai_settings_backend_hide_key">Hide key</string>
+    <string name="ai_settings_backend_help_prefix">Get an API key from:</string>
+    <string name="ai_settings_backend_save">Save</string>
+    <string name="ai_settings_backend_delete">Delete key</string>
 </resources>

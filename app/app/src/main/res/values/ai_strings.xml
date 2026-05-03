@@ -7,7 +7,7 @@
     SPDX-License-Identifier: Apache-2.0
 -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="MissingTranslation">
+    tools:ignore="MissingTranslation,PluralsCandidate">
     <string name="ai_settings_title">AI Keyboard Settings</string>
     <string name="ai_command_row_persona_selector_desc">Select AI persona</string>
     <string name="ai_command_row_rewrite_desc">Rewrite with AI</string>
@@ -65,4 +65,54 @@
     <string name="termux_validation_send_sleep">Run sleep 3 + echo (long-running)</string>
     <string name="termux_validation_sending_echo">Sending echo intent…</string>
     <string name="termux_validation_sending_sleep">Sending sleep 3 + echo intent…</string>
+
+    <!-- Phase 5b: Termux Bridge backend row + setup wizard + status screen -->
+    <string name="ai_settings_backend_termux_title">Termux Bridge</string>
+    <string name="ai_settings_backend_termux_status_running">Bridge running — %1$d providers authenticated</string>
+    <string name="ai_settings_backend_termux_status_running_zero">Bridge running — no providers authenticated</string>
+    <string name="ai_settings_backend_termux_status_not_running">Bridge not running — Tap to set up</string>
+    <string name="ai_settings_backend_termux_status_not_installed">Termux not installed — Tap to install</string>
+    <string name="ai_settings_backend_termux_status_unknown">Checking Termux status…</string>
+
+    <string name="termux_wizard_title">Termux Bridge setup</string>
+    <string name="termux_wizard_cancel">Cancel</string>
+
+    <string name="termux_wizard_step_install_title">Install Termux</string>
+    <string name="termux_wizard_step_install_body">Termux is a free Linux terminal app. The AI Keyboard runs the Claude and Gemini command-line tools inside it locally on your phone — your queries and OAuth tokens never leave the device. Install Termux from F-Droid (the Play Store version is unmaintained).</string>
+    <string name="termux_wizard_install_fdroid">Install Termux from F-Droid</string>
+    <string name="termux_wizard_already_installed">Already installed via GitHub APK</string>
+
+    <string name="termux_wizard_step_deploy_title">Copy the setup script into Termux</string>
+    <string name="termux_wizard_step_deploy_body">Open Termux and paste this command. It downloads our setup script into your home directory; once it\'s there, the keyboard can manage everything else for you.</string>
+    <string name="termux_wizard_step_deploy_dev_note">During development the curl URL above isn\'t hosted yet. From your dev machine: <b>adb push setup/setup.sh /data/local/tmp/</b>; then in Termux run <b>cp /data/local/tmp/setup.sh $HOME/ai-keyboard-setup.sh &amp;&amp; bash $HOME/ai-keyboard-setup.sh</b>.</string>
+    <string name="termux_wizard_copy_command">Copy command</string>
+    <string name="termux_wizard_copied">Command copied</string>
+    <string name="termux_wizard_open_termux">Open Termux</string>
+    <string name="termux_wizard_completed_setup">I\'ve completed setup, check now</string>
+    <string name="termux_wizard_polling">Watching for the bridge to come up…</string>
+
+    <string name="termux_wizard_step_start_title">Start the bridge</string>
+    <string name="termux_wizard_step_start_body">The setup script is in place but the bridge isn\'t responding yet. Tap below to start it. Termux will open while it runs.</string>
+    <string name="termux_wizard_start_bridge">Start the bridge</string>
+    <string name="termux_wizard_running_setup">Running setup…</string>
+    <string name="termux_wizard_setup_failed">Setup failed (exit %1$d).</string>
+    <string name="termux_wizard_copy_log">Copy log to clipboard</string>
+    <string name="termux_wizard_log_copied">Log copied</string>
+
+    <string name="termux_wizard_step_done_title">Termux backend ready</string>
+    <string name="termux_wizard_step_done_body">The bridge is running on 127.0.0.1:8787. Phase 6 will add it to the backend selector.</string>
+    <string name="termux_wizard_done">Done</string>
+
+    <string name="termux_status_title">Termux Bridge</string>
+    <string name="termux_status_running">Bridge running</string>
+    <string name="termux_status_uptime">Uptime: %1$s</string>
+    <string name="termux_status_provider_authenticated">Authenticated</string>
+    <string name="termux_status_provider_unauthenticated">Not authenticated</string>
+    <string name="termux_status_provider_reauth">Re-authenticate</string>
+    <string name="termux_status_restart">Restart bridge</string>
+    <string name="termux_status_stop">Stop bridge</string>
+    <string name="termux_status_restarting">Restarting…</string>
+    <string name="termux_status_stopping">Stopping…</string>
+    <string name="termux_status_reauthenticating">Re-authenticating %1$s…</string>
+    <string name="termux_status_action_failed">Action failed (exit %1$d)</string>
 </resources>

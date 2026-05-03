@@ -30,6 +30,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.aikeyboard.app.ai.client.Provider
 import com.aikeyboard.app.ai.storage.SecureStorage
+import com.aikeyboard.app.ai.termux.TermuxOrchestrator
 import com.aikeyboard.app.latin.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,10 +38,14 @@ import com.aikeyboard.app.latin.R
 fun BackendsScreen(
     onBack: () -> Unit,
     onEditProvider: (Provider) -> Unit,
+    onOpenTermuxBridge: () -> Unit,
 ) {
     val context = LocalContext.current
     val storage = remember { SecureStorage.getInstance(context) }
+    val orchestrator = remember { TermuxOrchestrator.getInstance(context) }
     var configured by remember { mutableStateOf(storage.getConfiguredProviders()) }
+    var termuxStatus by remember { mutableStateOf<TermuxOrchestrator.Status?>(null) }
+    var termuxAuthCount by remember { mutableStateOf<Int?>(null) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
@@ -50,6 +55,13 @@ fun BackendsScreen(
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
+    }
+
+    LaunchedEffect(Unit) {
+        termuxStatus = orchestrator.detectStatus()
+        if (termuxStatus == TermuxOrchestrator.Status.BRIDGE_RUNNING) {
+            termuxAuthCount = orchestrator.fetchProviders()?.count { it.available } ?: 0
+        }
     }
 
     Scaffold(
@@ -90,6 +102,41 @@ fun BackendsScreen(
                 )
                 HorizontalDivider()
             }
+
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenTermuxBridge() },
+                headlineContent = {
+                    Text(stringResource(R.string.ai_settings_backend_termux_title))
+                },
+                supportingContent = {
+                    Text(text = termuxStatusText(termuxStatus, termuxAuthCount))
+                },
+                trailingContent = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_chevron_right),
+                        contentDescription = null,
+                    )
+                },
+            )
+            HorizontalDivider()
         }
     }
+}
+
+@Composable
+private fun termuxStatusText(
+    status: TermuxOrchestrator.Status?,
+    authCount: Int?,
+): String = when (status) {
+    null -> stringResource(R.string.ai_settings_backend_termux_status_unknown)
+    TermuxOrchestrator.Status.TERMUX_NOT_INSTALLED ->
+        stringResource(R.string.ai_settings_backend_termux_status_not_installed)
+    TermuxOrchestrator.Status.BRIDGE_RUNNING -> {
+        val n = authCount ?: 0
+        if (n == 0) stringResource(R.string.ai_settings_backend_termux_status_running_zero)
+        else stringResource(R.string.ai_settings_backend_termux_status_running, n)
+    }
+    else -> stringResource(R.string.ai_settings_backend_termux_status_not_running)
 }

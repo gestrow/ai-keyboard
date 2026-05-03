@@ -61,6 +61,23 @@ The script is idempotent — re-run any time:
 - `--yes` skips the confirmation prompt; `--providers claude,gemini` skips
   the selection menu. OAuth prompts always pause for input.
 
+## `--reauth <provider>` (limited mode)
+
+Runs only the interactive OAuth flow for a single provider; skips package
+install, bridge deploy, and service registration. Used by the IME's
+`TermuxOrchestrator` (Phase 5b) when the user taps "Re-authenticate" on
+the Termux Bridge status screen.
+
+```bash
+bash $HOME/ai-keyboard-setup.sh --reauth claude
+bash $HOME/ai-keyboard-setup.sh --reauth gemini
+```
+
+Valid providers: `claude`, `gemini`. The script does **not** restart the
+bridge afterwards — each `/chat` request spawns a fresh CLI subprocess
+that reads the credential file at startup, so new auth is picked up on
+the next call.
+
 ## Uninstall
 
 ```bash

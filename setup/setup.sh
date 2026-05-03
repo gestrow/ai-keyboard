@@ -27,6 +27,7 @@ SELECTED_PROVIDERS=()
 BRIDGE_SOURCE=""
 ASSUME_YES=0
 PROVIDERS_VIA_FLAG=0
+REAUTH_PROVIDER=""
 
 # Resolve script's own directory for `--bridge-source` auto-detection.
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -116,6 +117,9 @@ Usage: bash setup.sh [OPTIONS]
 
   --bridge-source DIR  bridge/ tree to deploy (default: <script_dir>/../bridge)
   --providers LIST     comma list (claude,gemini); skips interactive menu
+  --reauth PROVIDER    only run interactive OAuth for one provider (claude|gemini),
+                       skipping pkg install / bridge deploy / service registration.
+                       Used by the IME's TermuxOrchestrator (Phase 5b).
   -y, --yes            skip the initial confirm; OAuth prompts still pause
   -h, --help           print this and exit
 
@@ -130,6 +134,8 @@ parse_args() {
             --bridge-source=*) BRIDGE_SOURCE="${1#*=}"; shift ;;
             --providers)       shift; [[ $# -gt 0 ]] || die "--providers requires a comma list"; parse_providers_arg "$1"; shift ;;
             --providers=*)     parse_providers_arg "${1#*=}"; shift ;;
+            --reauth)          shift; [[ $# -gt 0 ]] || die "--reauth requires a provider name (claude|gemini)"; REAUTH_PROVIDER="$1"; shift ;;
+            --reauth=*)        REAUTH_PROVIDER="${1#*=}"; shift ;;
             -y|--yes)          ASSUME_YES=1; shift ;;
             -h|--help)         usage; exit 0 ;;
             *)                 die "Unknown argument: $1 (try --help)" ;;
@@ -355,15 +361,23 @@ install_gemini_cli_if_selected() {
     log_ok "gemini installed: ${v:-<no version output>}"
 }
 
+run_oauth_for_claude() {
+    run_one_oauth claude "$HOME/.claude/.credentials.json" \
+        "Claude Code launches interactively. Sign in at claude.ai, then /exit (or Ctrl+C) to return."
+}
+
+run_oauth_for_gemini() {
+    run_one_oauth gemini "$HOME/.gemini/oauth_creds.json" \
+        "Gemini CLI launches interactively. Sign in with Google, then /quit (or Ctrl+C) to return."
+}
+
 run_oauth_flows() {
     log_step "6/9 OAuth flows"
     if provider_selected claude; then
-        run_one_oauth claude "$HOME/.claude/.credentials.json" \
-            "Claude Code launches interactively. Sign in at claude.ai, then /exit (or Ctrl+C) to return."
+        run_oauth_for_claude
     fi
     if provider_selected gemini; then
-        run_one_oauth gemini "$HOME/.gemini/oauth_creds.json" \
-            "Gemini CLI launches interactively. Sign in with Google, then /quit (or Ctrl+C) to return."
+        run_oauth_for_gemini
     fi
 }
 
@@ -578,9 +592,27 @@ Pick "Termux bridge" as the active backend in AI Keyboard's settings (Phase 6+).
 EOF
 }
 
+run_reauth_only() {
+    # Limited mode used by the IME's TermuxOrchestrator (Phase 5b). Skips
+    # pkg install, bridge deploy, service registration, and the success
+    # banner — only opens the named CLI for an interactive OAuth flow.
+    # Existing in-flight bridge sessions don't need a restart: each /chat
+    # spawns a fresh CLI subprocess that re-reads the cred file.
+    log_step "Re-auth: $REAUTH_PROVIDER"
+    case "$REAUTH_PROVIDER" in
+        claude) run_oauth_for_claude ;;
+        gemini) run_oauth_for_gemini ;;
+        *) die "Unknown provider: $REAUTH_PROVIDER. Valid: claude, gemini." 2 ;;
+    esac
+}
+
 main() {
     parse_args "$@"
     require_termux
+    if [[ -n "$REAUTH_PROVIDER" ]]; then
+        run_reauth_only
+        exit 0
+    fi
     print_banner
     confirm_proceed_or_exit
     set_allow_external_apps

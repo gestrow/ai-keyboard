@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.aikeyboard.app.ai.ui.termux.TermuxBridgeRoute
 
 object AiSettingsRoutes {
     const val HUB = "hub"
@@ -15,6 +16,7 @@ object AiSettingsRoutes {
     const val KEYBOARD_CHROME = "keyboard/chrome"
     const val BACKENDS_LIST = "backends/list"
     const val BACKENDS_EDIT = "backends/edit"
+    const val BACKENDS_TERMUX = "backends/termux"
     const val ARG_PERSONA_ID = "personaId"
     const val ARG_PROVIDER = "provider"
 
@@ -69,7 +71,11 @@ fun AiSettingsNavHost() {
                 onEditProvider = { provider ->
                     nav.navigate(AiSettingsRoutes.editBackendRoute(provider.storageKey))
                 },
+                onOpenTermuxBridge = { nav.navigate(AiSettingsRoutes.BACKENDS_TERMUX) },
             )
+        }
+        composable(AiSettingsRoutes.BACKENDS_TERMUX) {
+            TermuxBridgeRoute(onBack = { nav.popBackStack() })
         }
         composable(
             route = "${AiSettingsRoutes.BACKENDS_EDIT}/{${AiSettingsRoutes.ARG_PROVIDER}}",

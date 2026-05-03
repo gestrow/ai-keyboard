@@ -11,8 +11,21 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.headers
+import io.ktor.client.request.preparePost
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.readUTF8Line
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -21,17 +34,19 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 /**
  * Speaks Anthropic Messages and Gemini streamGenerateContent over HTTPS.
  *
- * Phase 3a: request building is real and unit-tested; {@link #rewrite} returns a stub
- * that emits {@link ErrorType#NOT_IMPLEMENTED} (or {@link ErrorType#NO_API_KEY} when
- * the provider is unconfigured) so callers compile and run.
- *
- * Phase 3b: implement actual SSE streaming for Anthropic and chunked-JSON streaming
- * for Gemini against {@link #buildRequest}'s output.
+ * Phase 3a built request shapes; 3b streams the responses. Anthropic uses named SSE
+ * events (`event: content_block_delta` etc.); Gemini's `?alt=sse` framing emits
+ * data-only events with one JSON object per chunk. Both branches map HTTP failures
+ * and exceptions to specific {@link ErrorType}s before completing the flow.
  */
 class RemoteApiBackend(
     private val provider: Provider,
@@ -57,15 +72,135 @@ class RemoteApiBackend(
             return@flow
         }
 
-        // Phase 3b: build the request, dispatch via httpClient, parse SSE / chunked JSON,
-        // emit Delta events per token, Done on completion, Error with mapped ErrorType
-        // on HTTP failure.
-        emit(
-            AiStreamEvent.Error(
-                ErrorType.NOT_IMPLEMENTED,
-                "Streaming not implemented yet (Phase 3b)",
-            ),
-        )
+        val request = buildRequest(input, systemPrompt, fewShots)
+
+        try {
+            httpClient.preparePost(request.url) {
+                contentType(ContentType.Application.Json)
+                headers {
+                    request.headers.forEach { (k, v) -> append(k, v) }
+                }
+                setBody(request.jsonBody)
+            }.execute { response ->
+                val status = response.status
+                if (status.value !in 200..299) {
+                    emit(mapHttpError(status, response))
+                    return@execute
+                }
+                when (provider) {
+                    Provider.ANTHROPIC -> streamAnthropic(response.bodyAsChannel())
+                    Provider.GOOGLE_GEMINI -> streamGemini(response.bodyAsChannel())
+                }
+            }
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (te: TimeoutCancellationException) {
+            emit(AiStreamEvent.Error(ErrorType.TIMEOUT, "Request timed out"))
+        } catch (t: Throwable) {
+            emit(
+                AiStreamEvent.Error(
+                    ErrorType.NETWORK_FAILURE,
+                    "Network error: ${t.message ?: t.javaClass.simpleName}",
+                ),
+            )
+        }
+    }
+
+    private suspend fun FlowCollector<AiStreamEvent>.streamAnthropic(channel: ByteReadChannel) {
+        // Track the most recent `event:` name so the matching `data:` line can be dispatched.
+        // Events are blank-line-terminated; ping events have no data and we ignore them.
+        var currentEvent: String? = null
+        while (true) {
+            val rawLine = channel.readUTF8Line() ?: break
+            val line = rawLine.trimEnd('\r')
+            if (line.isEmpty()) {
+                currentEvent = null
+                continue
+            }
+            when {
+                line.startsWith("event:") -> currentEvent = line.removePrefix("event:").trim()
+                line.startsWith("data:") -> {
+                    val data = line.removePrefix("data:").trim()
+                    if (data.isEmpty()) continue
+                    when (currentEvent) {
+                        "content_block_delta" -> {
+                            val text = parseAnthropicDeltaText(data)
+                            if (!text.isNullOrEmpty()) emit(AiStreamEvent.Delta(text))
+                        }
+                        "message_stop" -> {
+                            emit(AiStreamEvent.Done)
+                            return
+                        }
+                        "error" -> {
+                            emit(parseAnthropicError(data))
+                            return
+                        }
+                        // message_start, message_delta, content_block_start/stop, ping → ignore
+                        else -> Unit
+                    }
+                }
+                // SSE comments (`: keepalive`) and unknown line prefixes are ignored.
+            }
+        }
+        // Stream ended without an explicit message_stop event. Treat as done so the user
+        // sees what was streamed rather than an error.
+        emit(AiStreamEvent.Done)
+    }
+
+    private suspend fun FlowCollector<AiStreamEvent>.streamGemini(channel: ByteReadChannel) {
+        // Gemini's `?alt=sse` framing emits only `data:` lines, each a complete JSON object.
+        while (true) {
+            val rawLine = channel.readUTF8Line() ?: break
+            val line = rawLine.trimEnd('\r')
+            if (line.isEmpty() || !line.startsWith("data:")) continue
+            val data = line.removePrefix("data:").trim()
+            if (data.isEmpty()) continue
+
+            when (val event = parseGeminiChunk(data)) {
+                is GeminiChunk.Delta -> if (event.text.isNotEmpty()) emit(AiStreamEvent.Delta(event.text))
+                is GeminiChunk.DoneWithText -> {
+                    if (event.text.isNotEmpty()) emit(AiStreamEvent.Delta(event.text))
+                    emit(AiStreamEvent.Done)
+                    return
+                }
+                GeminiChunk.Done -> {
+                    emit(AiStreamEvent.Done)
+                    return
+                }
+                is GeminiChunk.Blocked -> {
+                    emit(AiStreamEvent.Error(ErrorType.UNKNOWN, event.message))
+                    return
+                }
+                GeminiChunk.Malformed -> {
+                    emit(AiStreamEvent.Error(ErrorType.UNKNOWN, "Malformed response from Gemini"))
+                    return
+                }
+            }
+        }
+        emit(AiStreamEvent.Done)
+    }
+
+    private suspend fun mapHttpError(status: HttpStatusCode, response: HttpResponse): AiStreamEvent.Error {
+        val type = when (status.value) {
+            401, 403 -> ErrorType.AUTH_FAILURE
+            429 -> ErrorType.RATE_LIMITED
+            in 500..599 -> ErrorType.NETWORK_FAILURE
+            else -> ErrorType.UNKNOWN
+        }
+        // Gemini surfaces `error.message`; Anthropic mirrors the same shape on non-streaming errors.
+        // Surfacing the upstream message gives clearer guidance ("API key not valid"), which is the
+        // model-supplied error string, not user content. Body itself is *not* logged.
+        val upstreamMessage = runCatching {
+            extractUpstreamErrorMessage(response.readBodyTruncated())
+        }.getOrNull()
+        val message = when {
+            !upstreamMessage.isNullOrBlank() -> "${provider.displayName}: $upstreamMessage"
+            type == ErrorType.AUTH_FAILURE -> "${provider.displayName} API key invalid or expired"
+            type == ErrorType.RATE_LIMITED -> "${provider.displayName} rate limit hit; try again in a moment"
+            type == ErrorType.NETWORK_FAILURE -> "${provider.displayName} service unavailable; try again"
+            else -> "${provider.displayName} request failed (${status.value})"
+        }
+        return AiStreamEvent.Error(type, message)
     }
 
     fun buildRequest(input: String, systemPrompt: String, fewShots: List<FewShot>): RemoteApiRequest {
@@ -82,6 +217,8 @@ class RemoteApiBackend(
         private const val ANTHROPIC_MAX_TOKENS = 4096
         private const val ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
         private const val GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+
+        private val parser = Json { ignoreUnknownKeys = true }
 
         // Long socket timeout because the connection stays open for the duration of the stream.
         val httpClient: HttpClient by lazy {
@@ -185,5 +322,85 @@ class RemoteApiBackend(
                 jsonBody = Json.encodeToString(JsonObject.serializer(), body),
             )
         }
+
+        internal fun parseAnthropicDeltaText(data: String): String? {
+            val parsed = runCatching { parser.parseToJsonElement(data).jsonObject }.getOrNull() ?: return null
+            val inner = parsed["delta"]?.jsonObject ?: return null
+            // Tool-use deltas (`input_json_delta`) appear if we ever add tools; ignore for plain text.
+            if (inner["type"]?.jsonPrimitive?.contentOrNull != "text_delta") return null
+            return inner["text"]?.jsonPrimitive?.contentOrNull
+        }
+
+        internal fun parseAnthropicError(data: String): AiStreamEvent.Error {
+            val parsed = runCatching { parser.parseToJsonElement(data).jsonObject }.getOrNull()
+                ?: return AiStreamEvent.Error(ErrorType.UNKNOWN, "Anthropic error (malformed)")
+            val errObj = parsed["error"]?.jsonObject
+            val innerType = errObj?.get("type")?.jsonPrimitive?.contentOrNull
+            val message = errObj?.get("message")?.jsonPrimitive?.contentOrNull ?: "Anthropic error"
+            val mapped = when (innerType) {
+                "overloaded_error", "rate_limit_error" -> ErrorType.RATE_LIMITED
+                "authentication_error", "permission_error" -> ErrorType.AUTH_FAILURE
+                else -> ErrorType.UNKNOWN
+            }
+            return AiStreamEvent.Error(mapped, message)
+        }
+
+        internal fun parseGeminiChunk(data: String): GeminiChunk {
+            val parsed = runCatching { parser.parseToJsonElement(data).jsonObject }.getOrNull()
+                ?: return GeminiChunk.Malformed
+            val candidates = parsed["candidates"]?.jsonArray
+            if (candidates.isNullOrEmpty()) {
+                val blockReason = parsed["promptFeedback"]?.jsonObject
+                    ?.get("blockReason")?.jsonPrimitive?.contentOrNull
+                if (!blockReason.isNullOrEmpty()) {
+                    return GeminiChunk.Blocked("Input blocked by Gemini safety filter")
+                }
+                return GeminiChunk.Malformed
+            }
+            val first = candidates[0].jsonObject
+            val finishReason = first["finishReason"]?.jsonPrimitive?.contentOrNull
+            val text = first["content"]?.jsonObject
+                ?.get("parts")?.jsonArray
+                ?.firstOrNull()?.jsonObject
+                ?.get("text")?.jsonPrimitive?.contentOrNull
+                .orEmpty()
+            return when (finishReason) {
+                null -> GeminiChunk.Delta(text)
+                "STOP", "MAX_TOKENS" -> GeminiChunk.DoneWithText(text)
+                "SAFETY", "RECITATION", "BLOCKED" ->
+                    GeminiChunk.Blocked("Response blocked by Gemini safety filter")
+                else -> GeminiChunk.Blocked("Gemini stopped: $finishReason")
+            }
+        }
+
+        internal fun extractUpstreamErrorMessage(body: String): String? {
+            val parsed = runCatching { parser.parseToJsonElement(body).jsonObject }.getOrNull()
+                ?: return null
+            // Gemini: { "error": { "message": "..." } }
+            // Anthropic non-streaming errors mirror the same shape via {error:{type,message}}.
+            val errObj = parsed["error"]?.jsonObject ?: return null
+            return errObj["message"]?.jsonPrimitive?.contentOrNull
+        }
+
+        // Reads up to 8 KiB of the response body for surfacing an error message. Truncating keeps
+        // the cost bounded and matches what users would meaningfully read in a single error toast.
+        private suspend fun HttpResponse.readBodyTruncated(): String {
+            val channel = bodyAsChannel()
+            val sb = StringBuilder()
+            while (sb.length < 8192) {
+                val line = channel.readUTF8Line() ?: break
+                sb.append(line).append('\n')
+            }
+            return sb.toString()
+        }
+    }
+
+    internal sealed interface GeminiChunk {
+        data class Delta(val text: String) : GeminiChunk
+        // STOP / MAX_TOKENS chunks may carry trailing text that should be flushed before Done.
+        data class DoneWithText(val text: String) : GeminiChunk
+        data object Done : GeminiChunk
+        data class Blocked(val message: String) : GeminiChunk
+        data object Malformed : GeminiChunk
     }
 }

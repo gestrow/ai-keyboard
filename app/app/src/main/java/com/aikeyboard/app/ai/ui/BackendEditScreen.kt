@@ -95,8 +95,8 @@ fun BackendEditScreen(
                     IconButton(onClick = { revealed = !revealed }) {
                         Icon(
                             painter = painterResource(
-                                if (revealed) R.drawable.ic_ai_toggle_on
-                                else R.drawable.ic_ai_toggle
+                                if (revealed) R.drawable.ic_visibility_off
+                                else R.drawable.ic_visibility
                             ),
                             contentDescription = stringResource(
                                 if (revealed) R.string.ai_settings_backend_hide_key

@@ -6,7 +6,6 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.aikeyboard.app.ai.persona.Persona
@@ -22,7 +21,7 @@ class CommandRowView @JvmOverloads constructor(
 
     interface Listener {
         fun onPersonaSelectorTap(anchor: View)
-        fun onAiToggleTap()
+        fun onRewriteTap()
         fun onReadRespondTap()
         fun onStickerTap()
         fun onSettingsLongPress()
@@ -34,7 +33,7 @@ class CommandRowView @JvmOverloads constructor(
     private val personaSelector: View
     private val personaLabel: TextView
     private val personaChevron: TextView
-    private val aiToggleIcon: ImageView
+    private val rewriteBtn: ImageButton
     private val readRespondBtn: ImageButton
     private val stickerBtn: ImageButton
     private val settingsBtn: ImageButton
@@ -47,13 +46,13 @@ class CommandRowView @JvmOverloads constructor(
         personaSelector = findViewById(R.id.cmd_persona_selector)
         personaLabel = findViewById(R.id.cmd_persona_label)
         personaChevron = findViewById(R.id.cmd_persona_chevron)
-        aiToggleIcon = findViewById(R.id.cmd_ai_toggle)
+        rewriteBtn = findViewById(R.id.cmd_rewrite)
         readRespondBtn = findViewById(R.id.cmd_read_respond)
         stickerBtn = findViewById(R.id.cmd_sticker)
         settingsBtn = findViewById(R.id.cmd_settings)
 
         personaSelector.setOnClickListener { listener?.onPersonaSelectorTap(personaSelector) }
-        aiToggleIcon.setOnClickListener { listener?.onAiToggleTap() }
+        rewriteBtn.setOnClickListener { listener?.onRewriteTap() }
         readRespondBtn.setOnClickListener { listener?.onReadRespondTap() }
         stickerBtn.setOnClickListener { listener?.onStickerTap() }
         settingsBtn.setOnClickListener { listener?.onSettingsTap() }
@@ -78,8 +77,8 @@ class CommandRowView @JvmOverloads constructor(
         personaLabel.setTextColor(keyTextColor)
         personaChevron.setTextColor(keyTextColor)
 
-        colors.setColor(aiToggleIcon, ColorType.TOOL_BAR_KEY)
-        colors.setBackground(aiToggleIcon, ColorType.STRIP_BACKGROUND)
+        colors.setColor(rewriteBtn, ColorType.TOOL_BAR_KEY)
+        colors.setBackground(rewriteBtn, ColorType.STRIP_BACKGROUND)
         colors.setColor(readRespondBtn, ColorType.TOOL_BAR_KEY)
         colors.setBackground(readRespondBtn, ColorType.STRIP_BACKGROUND)
         colors.setColor(stickerBtn, ColorType.TOOL_BAR_KEY)
@@ -90,13 +89,5 @@ class CommandRowView @JvmOverloads constructor(
 
     fun bindActivePersona(persona: Persona) {
         personaLabel.text = persona.name
-    }
-
-    fun setAiToggleState(enabled: Boolean) {
-        aiToggleIcon.setImageResource(
-            if (enabled) R.drawable.ic_ai_toggle_on else R.drawable.ic_ai_toggle
-        )
-        // Re-tint after swapping the source drawable; setColor binds a filter to the current drawable.
-        Settings.getValues().mColors.setColor(aiToggleIcon, ColorType.TOOL_BAR_KEY)
     }
 }

@@ -14,4 +14,7 @@ internal data class SecureData(
     val personas: List<Persona> = emptyList(),
     val activePersonaId: String? = null,
     val apiKeys: Map<String, String> = emptyMap(),
+    // Storage key of the user's preferred provider for Rewrite. UI to set it explicitly
+    // arrives in Phase 6; until then RemoteApiBackend falls back to "first configured wins".
+    val selectedProviderKey: String? = null,
 )

@@ -37,17 +37,15 @@
             android:text="@string/ai_persona_chevron" />
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/cmd_ai_toggle"
+    <ImageButton
+        android:id="@+id/cmd_rewrite"
         android:layout_width="44dp"
         android:layout_height="match_parent"
         android:background="?android:attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
         android:padding="10dp"
         android:scaleType="fitCenter"
-        android:src="@drawable/ic_ai_toggle"
-        android:contentDescription="@string/ai_command_row_ai_toggle_desc" />
+        android:src="@drawable/ic_rewrite"
+        android:contentDescription="@string/ai_command_row_rewrite_desc" />
 
     <ImageButton
         android:id="@+id/cmd_read_respond"

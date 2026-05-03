@@ -37,6 +37,7 @@ import android.view.inputmethod.InputMethodSubtype;
 import com.aikeyboard.app.accessibility.AccessibilityUtils;
 import com.aikeyboard.app.ai.commandrow.CommandRowController;
 import com.aikeyboard.app.ai.commandrow.CommandRowView;
+import com.aikeyboard.app.ai.preview.PreviewStripView;
 import com.aikeyboard.app.ai.storage.SecureStorage;
 import com.aikeyboard.app.compat.ConfigurationCompatKt;
 import com.aikeyboard.app.compat.EditorInfoCompatUtils;
@@ -761,7 +762,12 @@ public class LatinIME extends InputMethodService implements
     private void bindCommandRow(final View view) {
         final CommandRowView row = view.findViewById(R.id.ai_command_row);
         if (row == null) return;
-        mCommandRowController = new CommandRowController(this, row, SecureStorage.Companion.getInstance(this));
+        final PreviewStripView preview = view.findViewById(R.id.ai_preview_strip);
+        if (preview == null) return;
+        // Replacing an existing controller (input view recreated, e.g. after a theme change):
+        // tear down its coroutine scope so any orphaned in-flight stream is cancelled.
+        if (mCommandRowController != null) mCommandRowController.dispose();
+        mCommandRowController = new CommandRowController(this, row, preview, SecureStorage.Companion.getInstance(this));
     }
 
     public void updateSuggestionStripView(View view) {
@@ -1205,7 +1211,12 @@ public class LatinIME extends InputMethodService implements
         // to the underlying app and dismiss the keyboard.
         final View commandRow = mInputView.findViewById(R.id.ai_command_row);
         final int commandRowHeight = (commandRow != null && commandRow.isShown()) ? commandRow.getHeight() : 0;
-        int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight - commandRowHeight;
+        // Same pattern as commandRowHeight: the AI preview strip sits between the command row
+        // and the suggestion strip, and its height must be added to the touchable region while
+        // it's visible so the X (cancel) button and tap-to-commit gesture register.
+        final View previewStrip = mInputView.findViewById(R.id.ai_preview_strip);
+        final int previewStripHeight = (previewStrip != null && previewStrip.getVisibility() == View.VISIBLE) ? previewStrip.getHeight() : 0;
+        int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight - commandRowHeight - previewStripHeight;
 
         if (hasSuggestionStripView()) {
             mSuggestionStripView.setMoreSuggestionsHeight(visibleTopY);
@@ -1412,6 +1423,12 @@ public class LatinIME extends InputMethodService implements
     public void onEvent(@NonNull final Event event) {
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
             mRichImm.switchToShortcutIme(this);
+        }
+        // Cancel-on-typing: any character key (non-functional) press while a Rewrite stream
+        // is in flight should drop the preview and let the typed character hit the field
+        // normally. Functional events (shift, ctrl, settings, etc.) don't cancel.
+        if (mCommandRowController != null && !event.isFunctionalKeyEvent()) {
+            mCommandRowController.cancelStreamIfActive();
         }
         final InputTransaction completeInputTransaction =
                 mInputLogic.onCodeInput(mSettings.getCurrent(), event,

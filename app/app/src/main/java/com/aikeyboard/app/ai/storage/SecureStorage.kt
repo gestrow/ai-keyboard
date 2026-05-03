@@ -120,6 +120,25 @@ class SecureStorage private constructor(private val appContext: Context) {
             .mapNotNull { Provider.fromStorageKey(it) }
             .toSet()
 
+    @Synchronized
+    fun getSelectedProvider(): Provider? {
+        val data = load()
+        val explicit = data.selectedProviderKey?.let { Provider.fromStorageKey(it) }
+        // Drop the stored choice if its key was deleted; pick another rather than 404'ing.
+        if (explicit != null && data.apiKeys[explicit.storageKey].isNullOrEmpty().not()) return explicit
+        // No explicit choice (or its key was wiped): default Anthropic if configured, else
+        // any other provider with a key, else null.
+        if (!data.apiKeys[Provider.ANTHROPIC.storageKey].isNullOrEmpty()) return Provider.ANTHROPIC
+        return data.apiKeys.entries
+            .firstOrNull { !it.value.isNullOrEmpty() }
+            ?.let { Provider.fromStorageKey(it.key) }
+    }
+
+    @Synchronized
+    fun setSelectedProvider(provider: Provider) {
+        save(load().copy(selectedProviderKey = provider.storageKey))
+    }
+
     private fun load(): SecureData {
         cache?.let { return it }
         val file = secureFile

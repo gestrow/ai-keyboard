@@ -10,7 +10,7 @@
     tools:ignore="MissingTranslation">
     <string name="ai_settings_title">AI Keyboard Settings</string>
     <string name="ai_command_row_persona_selector_desc">Select AI persona</string>
-    <string name="ai_command_row_ai_toggle_desc">Toggle AI assist</string>
+    <string name="ai_command_row_rewrite_desc">Rewrite with AI</string>
     <string name="ai_command_row_read_respond_desc">Read screen and respond</string>
     <string name="ai_command_row_sticker_desc">Open stickers</string>
     <string name="ai_command_row_settings_desc">Open AI settings</string>
@@ -53,4 +53,9 @@
     <string name="ai_settings_backend_help_prefix">Get an API key from:</string>
     <string name="ai_settings_backend_save">Save</string>
     <string name="ai_settings_backend_delete">Delete key</string>
+
+    <string name="ai_preview_strip_tap_to_commit">tap to commit</string>
+    <string name="ai_preview_strip_cancel_desc">Cancel rewrite</string>
+    <string name="ai_rewrite_no_input">Nothing to rewrite</string>
+    <string name="ai_rewrite_no_backend">No AI backend configured — open Settings → Backends</string>
 </resources>

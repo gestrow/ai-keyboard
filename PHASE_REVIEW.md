@@ -176,26 +176,49 @@ Inserted after Phase 2 because device testing revealed chrome density and theme-
 - Verify `getSharedPreferences("com.aikeyboard.app_preferences", MODE_PRIVATE).getString("toolbar_mode", null)` (or whatever HeliBoard's actual pref key is — find it before writing the prompt) reads `SUGGESTION_STRIP` after first launch with no user intervention
 - Verify the toggle in settings actually flips this pref value (`adb shell run-as ... cat shared_prefs/...` before and after)
 
-### Phase 3 — RemoteApiBackend (Anthropic + Google) end-to-end + SecureStorage modernization
+### Phase 3a — Storage modernization + provider client infrastructure (no actual streaming)
 
 **Done means:**
-- **`SecureStorage` migrated off deprecated `EncryptedSharedPreferences`.** Replacement target: Tink-backed `EncryptedFile` for keysets + Jetpack DataStore for non-secret state, OR direct Keystore `KeyGenerator` + AES-GCM blob storage. Both personas (Phase 2 data) and API keys (Phase 3 new data) end up on the new storage. **Migration must preserve existing persona data** for users who installed Phase 2 first — read old prefs once, write new format, delete old prefs file.
-- `AiClient` interface defined; `BackendStrategy` enum with `REMOTE_API`, `LOCAL_LAN`, `TERMUX_BRIDGE`
-- `RemoteApiBackend` implements Anthropic Messages API and Gemini `generateContent` with streaming
-- API key entry UI in settings (one field per provider, masked); keys stored in (modernized) `SecureStorage`
-- `android.permission.INTERNET` declared in `app/src/main/AndroidManifest.xml` (HeliBoard ships without it, per Phase 2's note)
-- "Rewrite with AI" button in command row: takes current text-field content via `InputConnection`, sends to selected provider with selected persona's system prompt, streams response into a preview strip, commits on tap
-- Streaming preview strip lives **above** the suggestion strip (alongside our command row) — verify it follows the keyboard-surface UI invariants (runtime `Colors`, inset region updated)
-- Errors surface to user as toast or strip (no silent failures)
-- HTTPS client (Ktor or OkHttp): pinned version, dedicated `-keep` rules added to `proguard-rules.pro`
+- **`SecureStorage` migrated off deprecated `EncryptedSharedPreferences`** to Tink-backed `EncryptedFile` (single encrypted blob in `getFilesDir()/ai_keyboard_secure.bin`, AES-256-GCM via `com.google.crypto.tink:tink-android`, master keyset wrapped by Android Keystore). The class's public API surface is unchanged for existing callers.
+- **Migration is data-preserving:** on first launch after upgrade, if the old `shared_prefs/ai_keyboard_secure.prefs.xml` exists and the new blob does not, `SecureStorage` reads the old prefs (using `androidx.security:security-crypto` one-time, with `@Suppress("DEPRECATION")` on the migration method), writes the new format, **then** deletes the old file. If migration throws, the old file is preserved (don't crash, don't drop data; log without content).
+- **API key CRUD added** to `SecureStorage`: `getApiKey(provider: Provider)`, `saveApiKey(provider, key)`, `deleteApiKey(provider)`, `getConfiguredProviders(): Set<Provider>`. `Provider` enum has `ANTHROPIC` and `GOOGLE_GEMINI` values for now.
+- **`BackendsScreen`** Compose route added with provider list (each row: icon + name + "Configured" / "Not configured" status + chevron). Tapping a row opens a provider-edit screen with masked API-key field, show/hide toggle, Save, and Delete (Delete only enabled if currently configured). **No "Test connection" button this phase** — that's 3b.
+- **Hub-style nav refactor:** `SettingsHubScreen` is now the start destination of `AiSettingsNavHost`, listing three sections (Personas / Keyboard / Backends), each → its own route. The Phase 2.5 top-app-bar actions on `PersonaListScreen` are removed (the hub replaces that hidden navigation surface). Existing routes shift down one level.
+- **`AiClient` interface + `BackendStrategy` enum** declared in `com.aikeyboard.app.ai.client.*`. `AiStreamEvent` sealed interface (`Delta` / `Done` / `Error`) and `ErrorType` enum (`NETWORK_FAILURE`, `AUTH_FAILURE`, `NO_API_KEY`, `RATE_LIMITED`, `TIMEOUT`, `UNKNOWN`) declared. **No streaming impl yet** — `RemoteApiBackend.rewrite()` returns a `Flow` that emits a single `Error(NOT_IMPLEMENTED, "...")` event so callers compile and run, but no real call happens. (Phase 3b implements actual streaming.)
+- **`RemoteApiBackend` skeleton** in `com.aikeyboard.app.ai.client.remote` constructs HTTPS request objects (URL, headers, JSON body) for both Anthropic Messages and Gemini `streamGenerateContent` based on the configured provider — auth checking and request-building are real, response parsing is the 3b deliverable.
+- **HTTPS client (Ktor):** `io.ktor:ktor-client-okhttp` (pinned version verified via context7), `ktor-client-content-negotiation`, `ktor-serialization-kotlinx-json`. Singleton `HttpClient` configured with 30s connect timeout, 60s socket timeout. Proguard keep-rules added to `proguard-rules.pro` for Ktor + OkHttp + kotlinx.serialization (well-documented canonical rules).
+- **`android.permission.INTERNET`** declared in `app/src/main/AndroidManifest.xml` (HeliBoard ships without it — verify before adding).
+- **`networkSecurityConfig.xml`** created at `app/src/main/res/xml/network_security_config.xml` with HTTPS-only entries for `api.anthropic.com` and `generativelanguage.googleapis.com`. **No cleartext domain** — Phase 4 adds localhost cleartext for the Termux bridge. Referenced from `<application android:networkSecurityConfig="@xml/network_security_config">`.
+- Both flavors build clean; `lint` passes; `git diff lint-baseline.xml` empty.
 
 **Smoke test:**
-- Fresh install on a device with no prior Phase 2 install: API keys + personas both work
-- Upgrade install over a Phase 2 build: existing personas survive the storage migration (verify via `adb shell run-as ... ls shared_prefs/` shows the new file format and old `ai_keyboard_secure.prefs.xml` is deleted)
-- Type "this is a draft email" in any text field, tap Rewrite, verify a real LLM response appears in the preview strip
-- Disable network mid-stream — verify graceful error message, no crash
-- Clear API key, attempt Rewrite — verify clear "no key configured" message
-- Tap on the streaming preview strip area while it's showing — keyboard does not dismiss (verifies inset region was extended for it, per the keyboard-surface UI invariants)
+- **Upgrade install** on a Pixel 6 Pro that previously had Phase 2.5 fdroid installed: `adb install -r` (NO uninstall first). Open keyboard → personas dropdown still shows the four built-ins plus any custom personas you created in Phase 2. `adb shell run-as ... ls files/ shared_prefs/` shows new `ai_keyboard_secure.bin` and old `ai_keyboard_secure.prefs.xml` is gone.
+- **Fresh install** (after uninstall) on a clean device: open keyboard, four built-ins seeded, no API keys configured. Open settings → hub shows Personas/Keyboard/Backends. Tap Backends → both providers shown as "Not configured." Tap Anthropic → enter a key (any string), Save, return → "Configured." Kill app, reopen → still "Configured."
+- **`adb shell run-as ... cat files/ai_keyboard_secure.bin | xxd | head`** shows binary ciphertext, not plaintext API key.
+- **No network calls made:** `adb shell dumpsys netstats | grep com.aikeyboard.app.debug` shows zero bytes sent for the test session.
+- Logcat clean of `FATAL` / `AndroidRuntime`.
+
+### Phase 3b — End-to-end Rewrite (streaming preview + Anthropic + Gemini)
+
+**Done means:**
+- **Anthropic Messages streaming adapter** in `RemoteApiBackend`: SSE-based, parses `message_start` / `content_block_delta` / `message_stop` events, emits `AiStreamEvent.Delta` per token, `AiStreamEvent.Done` on `message_stop`, `AiStreamEvent.Error` on HTTP failures with appropriate `ErrorType` mapping (401/403 → `AUTH_FAILURE`, 429 → `RATE_LIMITED`, 5xx → `NETWORK_FAILURE`).
+- **Gemini streaming adapter** in `RemoteApiBackend`: chunked-JSON via `streamGenerateContent`, accumulates partial responses, emits same `AiStreamEvent` shape.
+- **Streaming preview strip** — new `View` in `com.aikeyboard.app.ai.preview.PreviewStripView`, sits between our command row and HeliBoard's `strip_container` in `main_keyboard_frame.xml`. Hidden by default; shows on stream start; updates text as deltas arrive; tap-to-commit replaces input field text via `InputConnection.commitText`. **Follows keyboard-surface UI invariants**: pulls colors from `Settings.getValues().mColors` (`STRIP_BACKGROUND`, `KEY_TEXT`, accent color for "tap to commit" hint); `LatinIME.onComputeInsets` calculation extended (single `visibleTopY` formula now subtracts command row height + preview strip height when visible).
+- **"Rewrite with AI" command-row button wired:** tap → reads `InputConnection.getTextBeforeCursor` + `getTextAfterCursor` for full input (or selected text if a selection is active) → loads active persona's `systemPrompt` + `fewShots` from `SecureStorage` → calls `AiClient.rewrite(...)` on the configured provider → streams into preview strip.
+- **Cancel-on-typing:** if user types any key while a stream is active, the in-flight `Flow` is cancelled (Kotlin coroutine cancellation), preview strip hides, no commit.
+- **Errors surface distinctly:** each `ErrorType` maps to a specific user-facing message; preview strip shows the error in red text or a toast, not a silent log entry.
+- **No silent failures**: any exception in the call path is converted to a `AiStreamEvent.Error` and surfaced.
+- Both flavors build clean; lint clean; lint-baseline diff empty.
+
+**Smoke test:**
+- Configure an Anthropic API key in BackendsScreen
+- Type "draft email about being late to the meeting", select Concise Editor persona, tap Rewrite — tokens stream into preview strip in real-time, tap to commit, verify input field text replaced
+- Repeat with Gemini provider
+- Disable network mid-stream — preview strip shows network error message, keyboard remains usable
+- Clear Anthropic API key, attempt Rewrite — clear "Anthropic API key not configured" message; no network call attempted
+- Start a Rewrite, then immediately type a character — stream cancels, preview strip hides
+- **Tap directly on the preview strip** at the very top edge while it's showing — keyboard does NOT dismiss (verifies the inset region was extended correctly)
+- Logcat: zero text content from the user's input or the model's output (privacy invariant)
 
 ### Phase 4 — Termux bridge (Node) for Claude + Gemini
 

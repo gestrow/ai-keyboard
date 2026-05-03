@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    AI Keyboard network security config (Phase 3a).
-    HTTPS-only for the two remote-API providers we ship with. Phase 4 adds a
-    cleartext entry for 127.0.0.1 to talk to the Termux bridge; Phase 10 expands
-    to user-configured RFC1918 ranges.
+    AI Keyboard network security config.
+    Phase 3a: HTTPS-only for the two remote-API providers we ship with.
+    Phase 4: cleartext for 127.0.0.1 / localhost so the IME can talk to the
+    Termux bridge (loopback only). Phase 10 expands to user-configured RFC1918.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
@@ -17,5 +17,9 @@
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
+    </domain-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
     </domain-config>
 </network-security-config>

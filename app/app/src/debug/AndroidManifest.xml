@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Debug-only manifest overlay (Phase 4).
+    Adds the RUN_COMMAND validation harness so we can verify Termux IPC works
+    on the test device before Phase 5 builds TermuxOrchestrator on top of it.
+    Release builds get neither the activity entry nor the permission.
+    SPDX-License-Identifier: GPL-3.0-only
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
+
+    <queries>
+        <!-- Required for Android 11+ package visibility so we can resolve
+             com.termux/.app.RunCommandService when firing the intent. -->
+        <package android:name="com.termux" />
+    </queries>
+
+    <application>
+        <activity
+            android:name="com.aikeyboard.app.ai.termux.TermuxValidationActivity"
+            android:exported="true"
+            android:label="Termux IPC Validation (debug)"
+            android:theme="@style/platformActivityTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

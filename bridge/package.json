@@ -1,0 +1,19 @@
+{
+  "name": "ai-keyboard-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local HTTP bridge between AI Keyboard IME and Termux-hosted CLI tools (Claude Code, Gemini CLI). Spawns the user-installed CLIs as subprocesses and exposes a normalized SSE streaming API on 127.0.0.1:8787. No AI SDK dependency.",
+  "license": "GPL-3.0-only",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "fastify": "5.8.5"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=20"
+  }
+}

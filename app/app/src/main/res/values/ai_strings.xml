@@ -58,4 +58,11 @@
     <string name="ai_preview_strip_cancel_desc">Cancel rewrite</string>
     <string name="ai_rewrite_no_input">Nothing to rewrite</string>
     <string name="ai_rewrite_no_backend">No AI backend configured — open Settings → Backends</string>
+
+    <!-- Phase 4 RUN_COMMAND validation harness (debug-only activity) -->
+    <string name="termux_validation_idle">Idle. Tap a button below to fire a Termux RUN_COMMAND intent.</string>
+    <string name="termux_validation_send_echo">Send echo intent</string>
+    <string name="termux_validation_send_sleep">Run sleep 3 + echo (long-running)</string>
+    <string name="termux_validation_sending_echo">Sending echo intent…</string>
+    <string name="termux_validation_sending_sleep">Sending sleep 3 + echo intent…</string>
 </resources>

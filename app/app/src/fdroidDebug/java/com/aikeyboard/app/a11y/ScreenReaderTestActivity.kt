@@ -62,8 +62,12 @@ class ScreenReaderTestActivity : ComponentActivity() {
             movementMethod = ScrollingMovementMethod()
         }
         val readButton = Button(this).apply {
-            text = "Read screen now"
-            setOnClickListener { runWalk() }
+            text = "Read screen in 3s"
+            setOnClickListener { v ->
+                statusView.text = "Switch to another app now…"
+                detailsView.text = ""
+                v.postDelayed({ runWalk() }, 3_000L)
+            }
         }
         root.addView(statusView)
         root.addView(readButton, LinearLayout.LayoutParams(

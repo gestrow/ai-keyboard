@@ -3,12 +3,18 @@ package com.aikeyboard.app.ai.commandrow
 
 import android.content.Intent
 import android.inputmethodservice.InputMethodService
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.ExtractedTextRequest
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.core.view.isVisible
+import com.aikeyboard.app.ai.a11y.A11yProxy
+import com.aikeyboard.app.ai.a11y.ReadRespondConsentActivity
+import com.aikeyboard.app.ai.a11y.ReadRespondPromptBuilder
+import com.aikeyboard.app.ai.a11y.ScreenContext
+import com.aikeyboard.app.ai.a11y.ScreenReaderResult
 import com.aikeyboard.app.ai.client.AiClient
 import com.aikeyboard.app.ai.client.AiStreamEvent
 import com.aikeyboard.app.ai.client.BackendResolver
@@ -16,7 +22,6 @@ import com.aikeyboard.app.ai.persona.Persona
 import com.aikeyboard.app.ai.preview.PreviewStripView
 import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.ui.AiSettingsActivity
-import com.aikeyboard.app.latin.BuildConfig
 import com.aikeyboard.app.latin.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -126,7 +131,10 @@ class CommandRowController @JvmOverloads constructor(
                 // The flow's emit-on-error wraps network failures, but if anything else slips
                 // through (e.g. construction error) surface it rather than failing silently.
                 if (t !is kotlinx.coroutines.CancellationException) {
-                    previewStrip.showError("Unexpected error: ${t.message ?: t.javaClass.simpleName}")
+                    // Phase 7b incidental fix: t.message can echo URL fragments, response-body
+                    // bytes, or prompt content. Use a static localized string instead.
+                    previewStrip.showError(ime.getString(R.string.ai_rewrite_stream_failed))
+                    Log.w(TAG, "Rewrite stream failed: ${t.javaClass.simpleName}")
                 }
             }
         }
@@ -169,16 +177,95 @@ class CommandRowController @JvmOverloads constructor(
     }
 
     override fun onReadRespondTap() {
-        if (!BuildConfig.ENABLE_A11Y) {
-            // Play flavor never ships ScreenReaderService — short-circuit
-            // before any code path could reference the fdroid-only class.
-            toast(R.string.ai_read_respond_not_supported_play)
+        // Walk first; consent and backend checks happen after we know there
+        // IS something to read. Saves the user a consent prompt if they're
+        // on a screen with no content above the cursor.
+        val result = A11yProxy.requestScreenContext()
+        when (result) {
+            is ScreenReaderResult.Success -> handleSuccessfulWalk(result.context)
+            ScreenReaderResult.Failure.SERVICE_NOT_ENABLED -> {
+                toast(R.string.ai_read_respond_service_not_enabled)
+                toast(R.string.ai_read_respond_settings_hint)
+                openAccessibilitySettings()
+            }
+            ScreenReaderResult.Failure.NO_ACTIVE_WINDOW ->
+                toast(R.string.ai_read_respond_no_active_window)
+            ScreenReaderResult.Failure.BUILD_DOES_NOT_SUPPORT ->
+                toast(R.string.ai_read_respond_not_supported_play)
+            ScreenReaderResult.Failure.UNKNOWN_FAILURE ->
+                toast(R.string.ai_read_respond_walk_failed)
+        }
+    }
+
+    private fun handleSuccessfulWalk(context: ScreenContext) {
+        if (context.aboveInputText.isBlank()) {
+            toast(R.string.ai_read_respond_no_context)
             return
         }
-        // Phase 7b wires the actual service-singleton + walk + rewrite path.
-        // Phase 7a deliberately stops here so the keyboard surface is
-        // untouched.
-        Log.d(TAG, "Read & Respond tapped — Phase 7b will wire the bind+rewrite path")
+        if (!storage.isReadRespondConsented()) {
+            launchConsentActivity()
+            return
+        }
+        val backend = backendResolver()
+        if (backend == null) {
+            toast(R.string.ai_rewrite_no_backend)
+            return
+        }
+        val persona = storage.getPersonas().firstOrNull { it.id == storage.getActivePersonaId() }
+            ?: storage.getPersonas().first()
+        val (input, systemPrompt) = ReadRespondPromptBuilder.build(
+            aboveInputText = context.aboveInputText,
+            focusedInputText = context.focusedInputText,
+            persona = persona,
+        )
+        // Read & Respond replaces the entire field on commit (no selection-range
+        // anchoring; Rewrite preserves selection, this doesn't).
+        usedSelectionRange = null
+        previewStrip.startStream()
+        previewStrip.requestLayout()
+        streamJob = scope.launch(Dispatchers.Main) {
+            try {
+                backend.rewrite(input, systemPrompt, fewShots = emptyList())
+                    .onCompletion { /* preview already cleaned by cancel() */ }
+                    .collect { event ->
+                        when (event) {
+                            is AiStreamEvent.Delta -> previewStrip.appendDelta(event.text)
+                            AiStreamEvent.Done -> previewStrip.markDone()
+                            is AiStreamEvent.Error -> previewStrip.showError(event.message)
+                        }
+                    }
+            } catch (t: Throwable) {
+                if (t !is kotlinx.coroutines.CancellationException) {
+                    // Privacy: log type only — never `input`, `context.*`, or `t.message`.
+                    // Read & Respond input is screen content the user didn't type, so we
+                    // are stricter than `onRewriteTap`'s mirror-image catch block.
+                    Log.w(TAG, "Read & Respond stream failed: ${t.javaClass.simpleName}")
+                    previewStrip.showError(
+                        ime.getString(R.string.ai_read_respond_stream_failed)
+                    )
+                }
+            }
+        }
+    }
+
+    private fun openAccessibilitySettings() {
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { ime.startActivity(intent) }
+            .onFailure {
+                Log.w(TAG, "Could not open ACCESSIBILITY_SETTINGS: ${it.javaClass.simpleName}")
+            }
+    }
+
+    private fun launchConsentActivity() {
+        val intent = Intent(ime, ReadRespondConsentActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { ime.startActivity(intent) }
+            .onFailure {
+                Log.w(TAG, "Could not launch consent activity: ${it.javaClass.simpleName}")
+            }
     }
 
     override fun onStickerTap() {

@@ -45,3 +45,17 @@
 -keep class com.aikeyboard.app.ai.client.BackendResolver {
     public static *** resolve(...);
 }
+
+# Phase 7b: keep A11yProxy in both flavors so the play dex invariant
+# (no ScreenReaderService reference) and the fdroid dex invariant
+# (proxy is the boundary, not inlined into CommandRowController) both hold.
+-keep class com.aikeyboard.app.ai.a11y.A11yProxy { *; }
+
+# Phase 7b: keep ReadRespondPromptBuilder observable in dex. R8 otherwise
+# inlines `build()` (single call site in CommandRowController.handleSuccessfulWalk)
+# and eliminates the class. Same precedent as the BackendResolver keep rule —
+# preserves the documented prompt-construction site as a single named entry
+# point for future audits.
+-keep class com.aikeyboard.app.ai.a11y.ReadRespondPromptBuilder {
+    public static *** build(...);
+}

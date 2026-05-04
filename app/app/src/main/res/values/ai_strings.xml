@@ -125,4 +125,21 @@
     <!-- Phase 7a: BuildConfig.ENABLE_A11Y guard on Read & Respond. Phase 7b
          replaces the placeholder Log.d with the real walk+rewrite path. -->
     <string name="ai_read_respond_not_supported_play">AI screen reading isn\'t available in the Play build.</string>
+
+    <!-- Phase 7b: Read & Respond -->
+    <string name="ai_read_respond_service_not_enabled">Enable AI Keyboard in Accessibility settings</string>
+    <string name="ai_read_respond_settings_hint">If toggle is greyed out, tap ⋮ → Allow restricted settings</string>
+    <string name="ai_read_respond_no_active_window">Open the app you want to respond to first</string>
+    <string name="ai_read_respond_walk_failed">Couldn\'t read screen, try again</string>
+    <string name="ai_read_respond_no_context">Nothing to respond to above your cursor</string>
+    <string name="ai_read_respond_stream_failed">Read &amp; Respond failed</string>
+    <string name="ai_read_respond_consent_title">Allow Read &amp; Respond?</string>
+    <string name="ai_read_respond_consent_body">Read &amp; Respond reads what\'s currently visible on your screen and sends it to the AI backend you selected in Settings → Backends. Only happens when you tap the Read &amp; Respond button — never automatically.</string>
+    <string name="ai_read_respond_consent_accept">Allow</string>
+    <string name="ai_read_respond_consent_decline">Not now</string>
+
+    <!-- Phase 7b incidental fix: Rewrite catch block previously surfaced t.message,
+         which can echo URL/response-body fragments. Replaced with a static localized
+         resource. -->
+    <string name="ai_rewrite_stream_failed">Rewrite failed</string>
 </resources>

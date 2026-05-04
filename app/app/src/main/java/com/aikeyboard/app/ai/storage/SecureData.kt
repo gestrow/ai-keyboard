@@ -23,4 +23,11 @@ internal data class SecureData(
     // Phase 6: when strategy == TERMUX_BRIDGE, which bridge /providers id is active.
     // String to stay loose-coupled from any enum (Codex in Phase 11 needs no schema change).
     val selectedTermuxProvider: String? = null,
+    // Phase 7b: Read & Respond sends screen content to the active backend
+    // (cloud or LAN/Termux). Default false — first Read & Respond tap shows
+    // a consent activity and only flips to true on Accept. Persisting a
+    // single boolean (not per-backend) is intentional: the user already
+    // chose the backend in Settings → Backends; this flag captures the
+    // separate "OK to send screen content to wherever I configured" decision.
+    val readRespondConsented: Boolean = false,
 )

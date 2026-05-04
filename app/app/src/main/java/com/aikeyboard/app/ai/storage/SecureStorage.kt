@@ -160,6 +160,15 @@ class SecureStorage private constructor(private val appContext: Context) {
         save(load().copy(selectedTermuxProvider = cliName?.takeIf { it.isNotEmpty() }))
     }
 
+    @Synchronized
+    fun isReadRespondConsented(): Boolean =
+        load().readRespondConsented
+
+    @Synchronized
+    fun setReadRespondConsented(consented: Boolean) {
+        save(load().copy(readRespondConsented = consented))
+    }
+
     private fun load(): SecureData {
         cache?.let { return it }
         val file = secureFile

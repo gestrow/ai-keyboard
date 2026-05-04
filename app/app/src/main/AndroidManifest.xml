@@ -102,6 +102,12 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             android:exported="false"
             android:theme="@style/platformActivityTheme" />
 
+        <activity
+            android:name="com.aikeyboard.app.ai.a11y.ReadRespondConsentActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/platformActivityTheme" />
+
         <!-- Broadcast receivers -->
         <receiver android:name="SystemBroadcastReceiver"
                 android:exported="true">

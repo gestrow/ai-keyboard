@@ -12,11 +12,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -26,8 +29,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.aikeyboard.app.ai.client.BackendStrategy
 import com.aikeyboard.app.ai.client.Provider
 import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.termux.TermuxOrchestrator
@@ -46,23 +51,38 @@ fun BackendsScreen(
     var configured by remember { mutableStateOf(storage.getConfiguredProviders()) }
     var termuxStatus by remember { mutableStateOf<TermuxOrchestrator.Status?>(null) }
     var termuxAuthCount by remember { mutableStateOf<Int?>(null) }
+    var activeStrategy by remember { mutableStateOf(storage.getSelectedBackendStrategy()) }
+    var activeRemoteProvider by remember { mutableStateOf(storage.getSelectedProvider()) }
+    // Bumped each ON_RESUME so the async Termux probe and stored-selection rederivation
+    // re-run after the user comes back from the status screen (where bridge state +
+    // selectedTermuxProvider can change). Without this, the screen would render stale
+    // BRIDGE_RUNNING / radio state until next composition.
+    var resumeCount by remember { mutableIntStateOf(0) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 configured = storage.getConfiguredProviders()
+                activeStrategy = storage.getSelectedBackendStrategy()
+                activeRemoteProvider = storage.getSelectedProvider()
+                resumeCount += 1
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(resumeCount) {
         termuxStatus = orchestrator.detectStatus()
-        if (termuxStatus == TermuxOrchestrator.Status.BRIDGE_RUNNING) {
-            termuxAuthCount = orchestrator.fetchProviders()?.count { it.available } ?: 0
+        termuxAuthCount = if (termuxStatus == TermuxOrchestrator.Status.BRIDGE_RUNNING) {
+            orchestrator.fetchProviders()?.count { it.available } ?: 0
+        } else {
+            null
         }
     }
+
+    val termuxSelectable = termuxStatus == TermuxOrchestrator.Status.BRIDGE_RUNNING
+        && (termuxAuthCount ?: 0) > 0
 
     Scaffold(
         topBar = {
@@ -80,14 +100,38 @@ fun BackendsScreen(
         }
     ) { padding: PaddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Text(
+                text = stringResource(R.string.ai_settings_backends_active_header),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
+            )
+
             Provider.entries.forEach { provider ->
+                val providerConfigured = provider in configured
+                val isActive = activeStrategy == BackendStrategy.REMOTE_API
+                    && activeRemoteProvider == provider
                 ListItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onEditProvider(provider) },
+                    leadingContent = {
+                        RadioButton(
+                            selected = isActive,
+                            enabled = providerConfigured,
+                            onClick = if (providerConfigured) {
+                                {
+                                    storage.setSelectedBackendStrategy(BackendStrategy.REMOTE_API)
+                                    storage.setSelectedProvider(provider)
+                                    activeStrategy = BackendStrategy.REMOTE_API
+                                    activeRemoteProvider = provider
+                                }
+                            } else null,
+                        )
+                    },
                     headlineContent = { Text(provider.displayName) },
                     supportingContent = {
-                        val statusRes = if (provider in configured)
+                        val statusRes = if (providerConfigured)
                             R.string.ai_settings_backend_status_configured
                         else
                             R.string.ai_settings_backend_status_not_configured
@@ -103,15 +147,39 @@ fun BackendsScreen(
                 HorizontalDivider()
             }
 
+            val termuxActive = activeStrategy == BackendStrategy.TERMUX_BRIDGE
             ListItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onOpenTermuxBridge() },
+                leadingContent = {
+                    RadioButton(
+                        selected = termuxActive,
+                        enabled = termuxSelectable,
+                        onClick = if (termuxSelectable) {
+                            {
+                                storage.setSelectedBackendStrategy(BackendStrategy.TERMUX_BRIDGE)
+                                activeStrategy = BackendStrategy.TERMUX_BRIDGE
+                                // Note: doesn't set selectedTermuxProvider — user picks that on
+                                // the status screen, which auto-picks the first available one
+                                // if the field is null when they land.
+                            }
+                        } else null,
+                    )
+                },
                 headlineContent = {
                     Text(stringResource(R.string.ai_settings_backend_termux_title))
                 },
                 supportingContent = {
-                    Text(text = termuxStatusText(termuxStatus, termuxAuthCount))
+                    val baseText = termuxStatusText(termuxStatus, termuxAuthCount)
+                    if (!termuxSelectable && termuxStatus != null) {
+                        // Hint that a configuration step is required, alongside the existing
+                        // status line — keeps the row's primary supporting text intact while
+                        // making the disabled-radio reason explicit.
+                        Text("$baseText\n${stringResource(R.string.ai_settings_backends_radio_disabled)}")
+                    } else {
+                        Text(baseText)
+                    }
                 },
                 trailingContent = {
                     Icon(

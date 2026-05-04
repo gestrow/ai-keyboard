@@ -11,8 +11,7 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import com.aikeyboard.app.ai.client.AiClient
 import com.aikeyboard.app.ai.client.AiStreamEvent
-import com.aikeyboard.app.ai.client.Provider
-import com.aikeyboard.app.ai.client.remote.RemoteApiBackend
+import com.aikeyboard.app.ai.client.BackendResolver
 import com.aikeyboard.app.ai.persona.Persona
 import com.aikeyboard.app.ai.preview.PreviewStripView
 import com.aikeyboard.app.ai.storage.SecureStorage
@@ -32,7 +31,7 @@ class CommandRowController @JvmOverloads constructor(
     private val view: CommandRowView,
     private val previewStrip: PreviewStripView,
     private val storage: SecureStorage,
-    private val backendFactory: (Provider) -> AiClient = { p -> RemoteApiBackend(p, storage) },
+    private val backendResolver: () -> AiClient? = { BackendResolver.resolve(storage) },
 ) : CommandRowView.Listener, PreviewStripView.Listener {
 
     private val scope: CoroutineScope = MainScope()
@@ -95,8 +94,8 @@ class CommandRowController @JvmOverloads constructor(
             return
         }
 
-        val provider = storage.getSelectedProvider()
-        if (provider == null) {
+        val backend = backendResolver()
+        if (backend == null) {
             toast(R.string.ai_rewrite_no_backend)
             return
         }
@@ -110,8 +109,6 @@ class CommandRowController @JvmOverloads constructor(
         // when the system next polls insets. View.requestLayout pokes a layout pass that
         // ultimately triggers WindowManager to query insets again.
         previewStrip.requestLayout()
-
-        val backend = backendFactory(provider)
         streamJob = scope.launch(Dispatchers.Main) {
             try {
                 backend.rewrite(input, persona.systemPrompt, persona.fewShots)

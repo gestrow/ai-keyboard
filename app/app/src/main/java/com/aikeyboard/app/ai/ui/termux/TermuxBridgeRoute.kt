@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.termux.TermuxOrchestrator
 import com.aikeyboard.app.latin.R
 
@@ -42,6 +43,7 @@ import com.aikeyboard.app.latin.R
 fun TermuxBridgeRoute(onBack: () -> Unit) {
     val context = LocalContext.current
     val orchestrator = remember { TermuxOrchestrator.getInstance(context) }
+    val storage = remember { SecureStorage.getInstance(context) }
     var status by remember { mutableStateOf<TermuxOrchestrator.Status?>(null) }
     var rechecks by remember { mutableIntStateOf(0) }
 
@@ -77,6 +79,7 @@ fun TermuxBridgeRoute(onBack: () -> Unit) {
         TermuxOrchestrator.Status.BRIDGE_RUNNING -> {
             TermuxBridgeStatusScreen(
                 orchestrator = orchestrator,
+                storage = storage,
                 onBack = onBack,
                 onRecheck = { rechecks += 1 },
             )

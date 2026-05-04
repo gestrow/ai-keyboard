@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.aikeyboard.app.ai.client.BackendStrategy
+import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.termux.TermuxOrchestrator
 import com.aikeyboard.app.latin.R
 import kotlinx.coroutines.launch
@@ -42,6 +45,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun TermuxBridgeStatusScreen(
     orchestrator: TermuxOrchestrator,
+    storage: SecureStorage,
     onBack: () -> Unit,
     onRecheck: () -> Unit,
 ) {
@@ -50,6 +54,7 @@ fun TermuxBridgeStatusScreen(
     var uptime by remember { mutableStateOf<Long?>(null) }
     var pendingAction by remember { mutableStateOf<PendingAction?>(null) }
     var lastError by remember { mutableStateOf<Pair<Int, String>?>(null) }
+    var selectedCli by remember { mutableStateOf(storage.getSelectedTermuxProvider()) }
     // Bumped whenever an action completes so the status snapshot re-fetches
     // (uptime, provider auth) without having to navigate away and back.
     var refreshCounter by remember { mutableIntStateOf(0) }
@@ -59,6 +64,17 @@ fun TermuxBridgeStatusScreen(
             if (state is TermuxOrchestrator.HealthState.Healthy) {
                 providers = state.providers
                 uptime = state.uptimeSeconds
+                // Auto-pick the first available CLI when the user has selected
+                // TERMUX_BRIDGE as their strategy but hasn't picked a CLI yet.
+                // Idempotent: returning users with a stored selection skip this branch.
+                if (storage.getSelectedBackendStrategy() == BackendStrategy.TERMUX_BRIDGE
+                    && storage.getSelectedTermuxProvider() == null) {
+                    val firstAvailable = state.providers.firstOrNull { it.available }?.id
+                    if (firstAvailable != null) {
+                        storage.setSelectedTermuxProvider(firstAvailable)
+                        selectedCli = firstAvailable
+                    }
+                }
             }
         }
     }
@@ -95,6 +111,44 @@ fun TermuxBridgeStatusScreen(
                     text = stringResource(R.string.termux_status_uptime, formatUptime(it)),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // ---- Phase 6: "Active CLI for Rewrite" sub-selector ----
+            Text(
+                text = stringResource(R.string.ai_settings_termux_active_cli_header),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            val available = providers?.filter { it.available }.orEmpty()
+            if (available.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.ai_settings_termux_active_cli_none),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                available.forEach { p ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                    ) {
+                        RadioButton(
+                            selected = selectedCli == p.id,
+                            onClick = {
+                                storage.setSelectedTermuxProvider(p.id)
+                                selectedCli = p.id
+                            },
+                        )
+                        Text(
+                            text = displayName(p.id),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

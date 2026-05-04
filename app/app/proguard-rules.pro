@@ -37,3 +37,11 @@
 -keep,includedescriptorclasses class **$$serializer { *; }
 -keepclassmembers class ** { *** Companion; }
 -keepclasseswithmembers class ** { kotlinx.serialization.KSerializer serializer(...); }
+
+# AI Keyboard (Phase 6): keep BackendResolver intact so the dispatch site in
+# CommandRowController is observable in dex (rather than getting inlined into a
+# lambda). Trivial cost; preserves the resolver as the documented single dispatch
+# point for the rewrite path.
+-keep class com.aikeyboard.app.ai.client.BackendResolver {
+    public static *** resolve(...);
+}

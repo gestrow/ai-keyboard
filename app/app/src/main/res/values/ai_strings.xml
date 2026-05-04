@@ -115,4 +115,10 @@
     <string name="termux_status_stopping">Stopping…</string>
     <string name="termux_status_reauthenticating">Re-authenticating %1$s…</string>
     <string name="termux_status_action_failed">Action failed (exit %1$d)</string>
+
+    <!-- Phase 6: backend-strategy switcher + Termux CLI sub-selector -->
+    <string name="ai_settings_backends_active_header">Active for Rewrite</string>
+    <string name="ai_settings_backends_radio_disabled">Configure to enable</string>
+    <string name="ai_settings_termux_active_cli_header">Active CLI for Rewrite</string>
+    <string name="ai_settings_termux_active_cli_none">Re-authenticate a provider below to enable Termux for Rewrite.</string>
 </resources>

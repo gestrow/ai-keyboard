@@ -4,6 +4,7 @@ package com.aikeyboard.app.ai.storage
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.aikeyboard.app.ai.client.BackendStrategy
 import com.aikeyboard.app.ai.client.Provider
 import com.aikeyboard.app.ai.persona.DefaultPersonas
 import com.aikeyboard.app.ai.persona.Persona
@@ -137,6 +138,26 @@ class SecureStorage private constructor(private val appContext: Context) {
     @Synchronized
     fun setSelectedProvider(provider: Provider) {
         save(load().copy(selectedProviderKey = provider.storageKey))
+    }
+
+    @Synchronized
+    fun getSelectedBackendStrategy(): BackendStrategy =
+        load().selectedBackendStrategy
+            ?.let { runCatching { BackendStrategy.valueOf(it) }.getOrNull() }
+            ?: BackendStrategy.REMOTE_API
+
+    @Synchronized
+    fun setSelectedBackendStrategy(strategy: BackendStrategy) {
+        save(load().copy(selectedBackendStrategy = strategy.name))
+    }
+
+    @Synchronized
+    fun getSelectedTermuxProvider(): String? =
+        load().selectedTermuxProvider?.takeIf { it.isNotEmpty() }
+
+    @Synchronized
+    fun setSelectedTermuxProvider(cliName: String?) {
+        save(load().copy(selectedTermuxProvider = cliName?.takeIf { it.isNotEmpty() }))
     }
 
     private fun load(): SecureData {

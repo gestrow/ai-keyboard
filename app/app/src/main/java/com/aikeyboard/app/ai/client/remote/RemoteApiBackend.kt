@@ -92,10 +92,15 @@ class RemoteApiBackend(
                     Provider.GOOGLE_GEMINI -> streamGemini(response.bodyAsChannel())
                 }
             }
+        } catch (te: TimeoutCancellationException) {
+            // MUST come before CancellationException — TimeoutCancellationException IS-A
+            // CancellationException, so the inverse order silently drops timeouts (the broader
+            // catch fires first, re-throws, and CommandRowController's outer guard against
+            // CancellationException turns it into a silent hang). Same fix applied to
+            // TermuxBridgeBackend in Phase 6.
+            emit(AiStreamEvent.Error(ErrorType.TIMEOUT, "Request timed out"))
         } catch (ce: CancellationException) {
             throw ce
-        } catch (te: TimeoutCancellationException) {
-            emit(AiStreamEvent.Error(ErrorType.TIMEOUT, "Request timed out"))
         } catch (t: Throwable) {
             emit(
                 AiStreamEvent.Error(

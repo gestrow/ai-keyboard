@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phase 7a: AccessibilityService configuration for ScreenReaderService.
+
+    Privacy posture (the load-bearing decision in this phase):
+
+    - accessibilityEventTypes="" — empty mask, zero events subscribed. The
+      framework will NOT call onAccessibilityEvent for any user action in any
+      app; we only do work when Phase 7b's wiring calls
+      `requestScreenContext()` directly. canRetrieveWindowContent="true" is
+      independent of event subscription, so getRootInActiveWindow() still
+      works on demand. Subscribing to even typeViewClicked would wake our
+      service for every tap in every app — that is not press-to-read-once.
+      AAPT2 rejects "0" for this flags attribute (it expects a flag-name
+      OR-list); the empty string is the legal way to express "no flags".
+
+    - canRetrieveWindowContent="true" — required for getRootInActiveWindow().
+
+    - accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows" —
+      flagDefault is the standard floor. flagRetrieveInteractiveWindows lets
+      getRootInActiveWindow() include floating / dialog windows when the
+      active window is a popup; otherwise we may miss the window the user is
+      actually looking at.
+
+    - accessibilityFeedbackType="feedbackGeneric" — required attribute. We
+      provide no feedback (no haptics, sounds, or speech), but the platform
+      requires a value.
+
+    - notificationTimeout="100" — required attribute even with empty
+      eventTypes. The minimum interval (ms) between events of the same type
+      that the framework will deliver to us. Irrelevant in practice given
+      the empty mask, but the platform refuses to register the service
+      without it.
+
+    - description / summary — shown in System Settings → Accessibility →
+      Installed apps. Be specific about press-to-read-once; vague copy
+      ("collects accessibility data") is what makes users distrust
+      a11y-using apps.
+
+    SPDX-License-Identifier: GPL-3.0-only
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes=""
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/screen_reader_service_description"
+    android:notificationTimeout="100"
+    android:summary="@string/screen_reader_service_summary" />

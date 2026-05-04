@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phase 7a: play-flavor manifest overlay. Intentionally empty — exists
+    only so ARCHITECTURE.md:157 and PHASE_REVIEW.md:30 (which both reference
+    `src/play/AndroidManifest.xml`) point at a real file rather than an
+    implicit absence. Functionally identical to omitting the file: AGP
+    merges this with src/main/'s manifest and contributes nothing.
+
+    The presence of this file is the architecture-conformance witness that
+    no a11y `<service>` is added to Play APKs.
+
+    SPDX-License-Identifier: GPL-3.0-only
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application />
+</manifest>

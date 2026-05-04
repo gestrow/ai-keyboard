@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phase 7a: fdroid-flavor manifest overlay. Contributes only the
+    AccessibilityService declaration; AGP merges this with src/main/'s
+    manifest at build time. The play-flavor overlay is intentionally empty
+    so this <service> never reaches Play APKs.
+
+    android:exported="true" is REQUIRED for AccessibilityServices: the
+    Android AccessibilityManagerService runs in `system_server` (a separate
+    UID), and exported="false" would silently prevent the system from
+    binding — the service would not appear in Settings → Accessibility at
+    all. The actual security gate is the
+    `android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"`
+    declaration: only the system holds that permission, so only the system
+    can perform the framework binding.
+
+    No <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE">
+    here — that's the service-side permission, not a caller-side one.
+
+    No FOREGROUND_SERVICE / FOREGROUND_SERVICE_SPECIAL_USE here — those are
+    Phase 8's concerns (always-on toggle), and per ARCHITECTURE.md they ship
+    only in the fdroid manifest, never in main.
+
+    SPDX-License-Identifier: GPL-3.0-only
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <service
+            android:name="com.aikeyboard.app.a11y.ScreenReaderService"
+            android:exported="true"
+            android:label="@string/screen_reader_service_summary"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+    </application>
+</manifest>

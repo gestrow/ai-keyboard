@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phase 7a: fdroid-only strings for the AccessibilityService entry that
+    appears in System Settings → Accessibility → Installed apps.
+
+    The description is shown verbatim under our service's name. Be specific
+    about press-to-read-once; vague copy is what makes users distrust
+    a11y-using apps. Translations land in Phase 12 polish.
+
+    SPDX-License-Identifier: Apache-2.0
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MissingTranslation">
+    <string name="screen_reader_service_description">AI Keyboard reads on-screen text only when you tap Read &amp; Respond on the keyboard. It does not run continuously, does not record anywhere, and reads no data when the keyboard is hidden. No data leaves your device beyond what you would normally send to your selected AI backend.</string>
+    <string name="screen_reader_service_summary">Read on-screen text on demand for AI replies</string>
+</resources>

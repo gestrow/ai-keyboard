@@ -121,4 +121,8 @@
     <string name="ai_settings_backends_radio_disabled">Configure to enable</string>
     <string name="ai_settings_termux_active_cli_header">Active CLI for Rewrite</string>
     <string name="ai_settings_termux_active_cli_none">Re-authenticate a provider below to enable Termux for Rewrite.</string>
+
+    <!-- Phase 7a: BuildConfig.ENABLE_A11Y guard on Read & Respond. Phase 7b
+         replaces the placeholder Log.d with the real walk+rewrite path. -->
+    <string name="ai_read_respond_not_supported_play">AI screen reading isn\'t available in the Play build.</string>
 </resources>

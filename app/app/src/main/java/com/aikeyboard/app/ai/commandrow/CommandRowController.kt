@@ -16,6 +16,7 @@ import com.aikeyboard.app.ai.persona.Persona
 import com.aikeyboard.app.ai.preview.PreviewStripView
 import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.ui.AiSettingsActivity
+import com.aikeyboard.app.latin.BuildConfig
 import com.aikeyboard.app.latin.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -168,7 +169,16 @@ class CommandRowController @JvmOverloads constructor(
     }
 
     override fun onReadRespondTap() {
-        Log.d(TAG, "Read & Respond tapped (Phase 7)")
+        if (!BuildConfig.ENABLE_A11Y) {
+            // Play flavor never ships ScreenReaderService — short-circuit
+            // before any code path could reference the fdroid-only class.
+            toast(R.string.ai_read_respond_not_supported_play)
+            return
+        }
+        // Phase 7b wires the actual service-singleton + walk + rewrite path.
+        // Phase 7a deliberately stops here so the keyboard surface is
+        // untouched.
+        Log.d(TAG, "Read & Respond tapped — Phase 7b will wire the bind+rewrite path")
     }
 
     override fun onStickerTap() {

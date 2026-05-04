@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phase 7a: fdroidDebug-only manifest overlay. Lands only in the
+    intersection of the fdroid flavor and the debug build type, i.e.
+    `assembleFdroidDebug` exclusively. Play APKs and fdroid release APKs do
+    not include this entry — `apkanalyzer manifest print` on either is
+    expected to show no ScreenReaderTestActivity.
+
+    android:exported="true" + LAUNCHER intent-filter is required for
+    Android 12+ to surface the activity in the app drawer (LAUNCHER
+    activities cannot be exported=false). The exposure is acceptable
+    because this is a debug-only build with no production users.
+
+    SPDX-License-Identifier: GPL-3.0-only
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="com.aikeyboard.app.a11y.ScreenReaderTestActivity"
+            android:exported="true"
+            android:label="Screen Reader Test"
+            android:theme="@style/platformActivityTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

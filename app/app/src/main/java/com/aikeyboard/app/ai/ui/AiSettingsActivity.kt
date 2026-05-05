@@ -19,13 +19,22 @@ class AiSettingsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Phase 8: tile taps deep-link directly into the always-on screen by
+        // passing the route name as an extra. Falls back to the hub when
+        // launched normally (gear icon, app launcher).
+        val startRoute = intent.getStringExtra(EXTRA_DEEP_LINK_ROUTE)
+            ?: AiSettingsRoutes.HUB
         setContent {
             AiSettingsTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    AiSettingsNavHost()
+                    AiSettingsNavHost(startDestination = startRoute)
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_DEEP_LINK_ROUTE = "deep_link_route"
     }
 }
 

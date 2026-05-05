@@ -59,3 +59,14 @@
 -keep class com.aikeyboard.app.ai.a11y.ReadRespondPromptBuilder {
     public static *** build(...);
 }
+
+# Phase 8: keep AlwaysOnProxy in both flavors. Same precedent as A11yProxy:
+# the play impl is a 1-line no-op that R8 will inline; the keep rule preserves
+# the dex-invariant assertion that the play APK contains a (no-op) proxy
+# class rather than inlining its constants into Settings UI bytecode.
+-keep class com.aikeyboard.app.ai.a11y.AlwaysOnProxy { *; }
+
+# Phase 8: keep ReadRespondNotificationBuilder so the play APK ships the
+# class even though no fdroid-only code references it there. Required by
+# the §13 dex invariant table.
+-keep class com.aikeyboard.app.ai.a11y.ReadRespondNotificationBuilder { *; }

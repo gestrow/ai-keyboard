@@ -30,4 +30,9 @@ internal data class SecureData(
     // chose the backend in Settings → Backends; this flag captures the
     // separate "OK to send screen content to wherever I configured" decision.
     val readRespondConsented: Boolean = false,
+    // Phase 8: Always-On Read & Respond toggle. Default false. When true,
+    // AlwaysOnService runs as FGS, the QS tile is ACTIVE, and BootReceiver
+    // restarts the service after reboot. Flipping to true requires a11y
+    // permission, POST_NOTIFICATIONS (Android 13+), and readRespondConsented.
+    val alwaysOnEnabled: Boolean = false,
 )

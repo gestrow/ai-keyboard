@@ -24,6 +24,15 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Phase 8: foreground service permissions for AlwaysOnService.
+         POST_NOTIFICATIONS gates the persistent FGS chip + streaming-result
+         notifications on Android 13+. RECEIVE_BOOT_COMPLETED is NOT here —
+         already declared in src/main/AndroidManifest.xml since Phase 1
+         (HeliBoard's legacy SystemBroadcastReceiver). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application>
         <service
             android:name="com.aikeyboard.app.a11y.ScreenReaderService"
@@ -37,5 +46,54 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <!-- Phase 8: AlwaysOnService — runs whenever Always-On Read & Respond
+             is toggled on. specialUse FGS type per Android 14+ requirement;
+             the <property> subtype is required by Google Play policy AND by
+             the runtime check. The string "screen_reader_companion" appears
+             in `dumpsys activity services` output for human auditing. -->
+        <service
+            android:name="com.aikeyboard.app.a11y.AlwaysOnService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="screen_reader_companion" />
+        </service>
+
+        <!-- Phase 8: Quick Settings tile. The system binds via the
+             BIND_QUICK_SETTINGS_TILE permission. -->
+        <service
+            android:name="com.aikeyboard.app.a11y.ReadRespondTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_read_respond"
+            android:label="@string/ai_always_on_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name="com.aikeyboard.app.a11y.ClipboardCopyReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.aikeyboard.app.ACTION_CLIPBOARD_COPY" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Phase 8: BootReceiver re-starts AlwaysOnService after device boot
+             when the user previously enabled always-on. exported="true" is
+             required because the system's ActivityManager (different UID)
+             sends BOOT_COMPLETED. directBootAware="false" defers invocation
+             until after user unlock — sidesteps Tink's CE-only Keystore. -->
+        <receiver
+            android:name="com.aikeyboard.app.a11y.BootReceiver"
+            android:exported="true"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

@@ -142,4 +142,44 @@
          which can echo URL/response-body fragments. Replaced with a static localized
          resource. -->
     <string name="ai_rewrite_stream_failed">Rewrite failed</string>
+
+    <!-- Phase 8: Always-On Read & Respond. Note: ai_always_on_tile_label is
+         referenced only by the fdroid-flavor manifest (the tile service does
+         not exist in the play APK), so it lives in src/fdroid/res/values/. -->
+    <string name="ai_always_on_chip_title">AI Keyboard — Read &amp; Respond</string>
+    <string name="ai_always_on_chip_body">Tap a chat\'s input field, then tap the tile to compose a response.</string>
+    <string name="ai_always_on_chip_action">Read &amp; Respond now</string>
+    <string name="ai_always_on_channel_persistent">Always-On status</string>
+    <string name="ai_always_on_channel_persistent_desc">Persistent chip while Always-On Read &amp; Respond is enabled</string>
+    <string name="ai_always_on_channel_results">Read &amp; Respond results</string>
+    <string name="ai_always_on_channel_results_desc">Streaming AI responses triggered from the Quick Settings tile</string>
+    <string name="ai_settings_hub_always_on_title">Always-on Read &amp; Respond</string>
+    <string name="ai_settings_hub_always_on_desc">Trigger Read &amp; Respond from Quick Settings, even when the keyboard isn\'t open</string>
+    <string name="ai_always_on_screen_title">Always-on Read &amp; Respond</string>
+    <string name="ai_always_on_toggle_label">Always-on Read &amp; Respond</string>
+    <string name="ai_always_on_status_header">Permission status</string>
+    <string name="ai_always_on_status_a11y_enabled">Accessibility service: Enabled</string>
+    <string name="ai_always_on_status_a11y_disabled">Accessibility service: Disabled</string>
+    <string name="ai_always_on_status_notif_granted">Notification permission: Granted</string>
+    <string name="ai_always_on_status_notif_required">Notification permission: Required</string>
+    <string name="ai_always_on_status_consent_yes">Screen-content consent: Allowed</string>
+    <string name="ai_always_on_status_consent_no">Screen-content consent: Required</string>
+    <string name="ai_always_on_action_open_a11y">Open accessibility settings</string>
+    <string name="ai_always_on_action_grant_notif">Grant</string>
+    <string name="ai_always_on_action_review_consent">Review</string>
+    <string name="ai_always_on_body_persistent_notice">A persistent notification will appear while always-on is active.</string>
+    <string name="ai_always_on_body_tile_hint">Add the AI Keyboard tile to Quick Settings to trigger Read &amp; Respond from anywhere.</string>
+    <string name="ai_always_on_body_consent_reminder">Read &amp; Respond only fires when you tap the tile or the notification action — never automatically.</string>
+    <string name="ai_always_on_body_how_to_add_tile">How to add the tile: open Quick Settings, tap the pencil/edit icon, then drag \"Read &amp; Respond\" into your active tiles.</string>
+    <string name="ai_always_on_not_supported_play">Always-on Read &amp; Respond requires the F-Droid build of AI Keyboard.</string>
+    <string name="ai_read_respond_result_title">Response ready</string>
+    <string name="ai_read_respond_action_copy">Copy</string>
+    <string name="ai_read_respond_action_dismiss">Dismiss</string>
+    <string name="ai_read_respond_failure_no_window">No active window — open the app you want to respond to first.</string>
+    <string name="ai_read_respond_failure_generic">Couldn\'t read screen, try again.</string>
+    <string name="ai_read_respond_failure_no_context">Nothing to respond to above your cursor.</string>
+    <string name="ai_read_respond_failure_no_backend">Configure a backend in AI Settings to use Read &amp; Respond.</string>
+    <string name="ai_read_respond_failure_stream">Read &amp; Respond failed.</string>
+    <string name="ai_read_respond_failure_consent_required">Tap the AI Keyboard\'s Read &amp; Respond button once to grant consent.</string>
+    <string name="ai_read_respond_failure_a11y_required">Enable AI Keyboard\'s accessibility service in System Settings.</string>
 </resources>

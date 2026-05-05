@@ -77,4 +77,15 @@ class SecureStorageTest {
         assertEquals(Provider.GOOGLE_GEMINI, Provider.fromStorageKey("google_gemini"))
         assertNull(Provider.fromStorageKey("unknown"))
     }
+
+    @Test
+    fun envelope_alwaysOnEnabled_defaultsFalse_andRoundTrips() {
+        val empty = SecureData()
+        assertEquals(false, empty.alwaysOnEnabled)
+
+        val toggled = empty.copy(alwaysOnEnabled = true)
+        val encoded = json.encodeToString(SecureData.serializer(), toggled)
+        val decoded = json.decodeFromString(SecureData.serializer(), encoded)
+        assertEquals(true, decoded.alwaysOnEnabled)
+    }
 }

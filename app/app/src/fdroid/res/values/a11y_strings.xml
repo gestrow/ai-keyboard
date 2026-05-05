@@ -13,4 +13,8 @@
     tools:ignore="MissingTranslation">
     <string name="screen_reader_service_description">AI Keyboard reads on-screen text only when you tap Read &amp; Respond on the keyboard. It does not run continuously, does not record anywhere, and reads no data when the keyboard is hidden. No data leaves your device beyond what you would normally send to your selected AI backend.</string>
     <string name="screen_reader_service_summary">Read on-screen text on demand for AI replies</string>
+
+    <!-- Phase 8: tile label is fdroid-only because the QS tile service entry
+         only exists in src/fdroid/AndroidManifest.xml. -->
+    <string name="ai_always_on_tile_label">Read &amp; Respond</string>
 </resources>

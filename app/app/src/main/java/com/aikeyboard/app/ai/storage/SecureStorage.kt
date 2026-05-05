@@ -169,6 +169,14 @@ class SecureStorage private constructor(private val appContext: Context) {
         save(load().copy(readRespondConsented = consented))
     }
 
+    @Synchronized
+    fun isAlwaysOnEnabled(): Boolean = load().alwaysOnEnabled
+
+    @Synchronized
+    fun setAlwaysOnEnabled(enabled: Boolean) {
+        save(load().copy(alwaysOnEnabled = enabled))
+    }
+
     private fun load(): SecureData {
         cache?.let { return it }
         val file = secureFile

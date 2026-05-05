@@ -26,6 +26,7 @@ fun SettingsHubScreen(
     onOpenPersonas: () -> Unit,
     onOpenKeyboardChrome: () -> Unit,
     onOpenBackends: () -> Unit,
+    onOpenAlwaysOn: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -52,6 +53,13 @@ fun SettingsHubScreen(
                 descriptionRes = R.string.ai_settings_hub_backends_desc,
                 iconRes = R.drawable.ic_settings_about_github,
                 onClick = onOpenBackends,
+            )
+            HorizontalDivider()
+            HubRow(
+                titleRes = R.string.ai_settings_hub_always_on_title,
+                descriptionRes = R.string.ai_settings_hub_always_on_desc,
+                iconRes = R.drawable.ic_read_respond,
+                onClick = onOpenAlwaysOn,
             )
             HorizontalDivider()
         }

@@ -182,4 +182,43 @@
     <string name="ai_read_respond_failure_stream">Read &amp; Respond failed.</string>
     <string name="ai_read_respond_failure_consent_required">Tap the AI Keyboard\'s Read &amp; Respond button once to grant consent.</string>
     <string name="ai_read_respond_failure_a11y_required">Enable AI Keyboard\'s accessibility service in System Settings.</string>
+
+    <!-- Phase 9a: sticker engine + COMMIT_CONTENT path. -->
+    <string name="ai_settings_hub_stickers_title">Stickers</string>
+    <string name="ai_settings_hub_stickers_desc">Import and manage sticker packs</string>
+
+    <string name="ai_stickers_default_pack_name">My Stickers</string>
+
+    <string name="ai_stickers_picker_back_desc">Close stickers</string>
+    <!-- The on-keyboard import button opens AI Settings → Stickers (because
+         ActivityResultRegistry isn't available on InputMethodService). The
+         content-description reflects the actual navigation target so screen
+         readers don't mislead. -->
+    <string name="ai_stickers_picker_import_desc">Open Settings to import stickers</string>
+    <string name="ai_stickers_picker_item_desc">Sticker</string>
+    <string name="ai_stickers_picker_empty">No stickers yet — open AI Settings to import.</string>
+
+    <string name="ai_stickers_packs_empty_title">No sticker packs</string>
+    <string name="ai_stickers_packs_empty_body">Import images and they\'ll be normalized to 512×512 stickers, ready to send.</string>
+    <string name="ai_stickers_packs_import_action">Import stickers</string>
+
+    <string name="ai_stickers_pack_count_one">1 sticker</string>
+    <string name="ai_stickers_pack_count_many">%1$d stickers</string>
+
+    <string name="ai_stickers_pack_edit_title">Edit pack</string>
+    <string name="ai_stickers_pack_name_label">Pack name</string>
+    <string name="ai_stickers_pack_save">Save</string>
+    <string name="ai_stickers_pack_delete">Delete pack</string>
+    <string name="ai_stickers_pack_delete_title">Delete pack?</string>
+    <string name="ai_stickers_pack_delete_body">All stickers in this pack will be removed from the device.</string>
+    <string name="ai_stickers_pack_import_more">Import more</string>
+    <string name="ai_stickers_pack_empty">No stickers in this pack yet. Tap + to import.</string>
+    <string name="ai_stickers_sticker_delete_title">Delete sticker?</string>
+    <string name="ai_stickers_sticker_delete_confirm">Delete</string>
+    <string name="ai_stickers_sticker_delete_cancel">Cancel</string>
+
+    <string name="ai_stickers_commit_no_connection">No active text field</string>
+    <string name="ai_stickers_commit_unsupported">This app doesn\'t accept stickers. Add this pack to WhatsApp to send them there.</string>
+    <string name="ai_stickers_commit_failed">Couldn\'t insert sticker, try again</string>
+    <string name="ai_stickers_commit_missing_file">Sticker file missing</string>
 </resources>

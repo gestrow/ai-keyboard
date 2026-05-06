@@ -38,6 +38,7 @@ import com.aikeyboard.app.accessibility.AccessibilityUtils;
 import com.aikeyboard.app.ai.commandrow.CommandRowController;
 import com.aikeyboard.app.ai.commandrow.CommandRowView;
 import com.aikeyboard.app.ai.preview.PreviewStripView;
+import com.aikeyboard.app.ai.sticker.picker.StickerPickerView;
 import com.aikeyboard.app.ai.storage.SecureStorage;
 import com.aikeyboard.app.compat.ConfigurationCompatKt;
 import com.aikeyboard.app.compat.EditorInfoCompatUtils;
@@ -768,6 +769,10 @@ public class LatinIME extends InputMethodService implements
         // tear down its coroutine scope so any orphaned in-flight stream is cancelled.
         if (mCommandRowController != null) mCommandRowController.dispose();
         mCommandRowController = new CommandRowController(this, row, preview, SecureStorage.Companion.getInstance(this));
+        final StickerPickerView stickerPicker = view.findViewById(R.id.ai_sticker_picker);
+        if (stickerPicker != null) {
+            mCommandRowController.setStickerPicker(stickerPicker);
+        }
     }
 
     public void updateSuggestionStripView(View view) {
@@ -856,6 +861,10 @@ public class LatinIME extends InputMethodService implements
 
     void onStartInputViewInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInputView(editorInfo, restarting);
+
+        if (mCommandRowController != null) {
+            mCommandRowController.onInputStarted(editorInfo);
+        }
 
         // only for active gesture data gathering, remove when data gathering phase is done (end of 2026 latest)
         if (GestureDataGatheringKt.isInActiveGatheringMode(editorInfo)) {

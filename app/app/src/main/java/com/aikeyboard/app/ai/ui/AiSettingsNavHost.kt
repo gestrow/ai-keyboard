@@ -10,6 +10,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.ui.alwayson.AlwaysOnRoute
+import com.aikeyboard.app.ai.ui.stickers.StickerPackEditRoute
+import com.aikeyboard.app.ai.ui.stickers.StickerPacksRoute
 import com.aikeyboard.app.ai.ui.termux.TermuxBridgeRoute
 
 object AiSettingsRoutes {
@@ -21,14 +23,20 @@ object AiSettingsRoutes {
     const val BACKENDS_EDIT = "backends/edit"
     const val BACKENDS_TERMUX = "backends/termux"
     const val ALWAYS_ON = "always-on"
+    const val STICKERS_LIST = "stickers/list"
+    const val STICKERS_EDIT = "stickers/edit"
     const val ARG_PERSONA_ID = "personaId"
     const val ARG_PROVIDER = "provider"
+    const val ARG_STICKER_PACK_ID = "packId"
 
     fun editPersonaRoute(personaId: String? = null): String =
         if (personaId == null) "$PERSONAS_EDIT?$ARG_PERSONA_ID=" else "$PERSONAS_EDIT?$ARG_PERSONA_ID=$personaId"
 
     fun editBackendRoute(providerStorageKey: String): String =
         "$BACKENDS_EDIT/$providerStorageKey"
+
+    fun editStickerPackRoute(packId: String): String =
+        "$STICKERS_EDIT/$packId"
 }
 
 @Composable
@@ -43,6 +51,7 @@ fun AiSettingsNavHost(
                 onOpenKeyboardChrome = { nav.navigate(AiSettingsRoutes.KEYBOARD_CHROME) },
                 onOpenBackends = { nav.navigate(AiSettingsRoutes.BACKENDS_LIST) },
                 onOpenAlwaysOn = { nav.navigate(AiSettingsRoutes.ALWAYS_ON) },
+                onOpenStickers = { nav.navigate(AiSettingsRoutes.STICKERS_LIST) },
             )
         }
         composable(AiSettingsRoutes.PERSONAS_LIST) {
@@ -101,6 +110,25 @@ fun AiSettingsNavHost(
             BackendEditScreen(
                 providerStorageKey = key,
                 onDone = { nav.popBackStack() },
+            )
+        }
+        composable(AiSettingsRoutes.STICKERS_LIST) {
+            StickerPacksRoute(
+                onBack = { nav.popBackStack() },
+                onOpenPack = { id -> nav.navigate(AiSettingsRoutes.editStickerPackRoute(id)) },
+            )
+        }
+        composable(
+            route = "${AiSettingsRoutes.STICKERS_EDIT}/{${AiSettingsRoutes.ARG_STICKER_PACK_ID}}",
+            arguments = listOf(
+                navArgument(AiSettingsRoutes.ARG_STICKER_PACK_ID) { type = NavType.StringType }
+            ),
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString(AiSettingsRoutes.ARG_STICKER_PACK_ID)
+                ?: return@composable
+            StickerPackEditRoute(
+                packId = id,
+                onBack = { nav.popBackStack() },
             )
         }
     }

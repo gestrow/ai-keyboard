@@ -167,6 +167,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.navigation:navigation-compose:2.9.6")
+    // Phase 9a: PickMultipleVisualMedia + rememberLauncherForActivityResult come from
+    // activity-compose (currently transitive via navigation-compose). Pinning it as a
+    // direct dependency avoids silent breakage if a future navigation-compose bump
+    // drops the transitive. BOM-managed (no version pin).
+    implementation("androidx.activity:activity-compose")
     implementation("sh.calvin.reorderable:reorderable:2.4.3") // for easier re-ordering, todo: check 3.0.0
     implementation("com.github.skydoves:colorpicker-compose:1.1.3") // for user-defined colors
 

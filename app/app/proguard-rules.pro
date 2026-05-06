@@ -70,3 +70,12 @@
 # class even though no fdroid-only code references it there. Required by
 # the §13 dex invariant table.
 -keep class com.aikeyboard.app.ai.a11y.ReadRespondNotificationBuilder { *; }
+
+# Phase 9a: keep StickerCommitter observable in dex. Single call site
+# (CommandRowController.commitSticker) — same R8 inlining pattern as
+# BackendResolver and ReadRespondPromptBuilder. Negligible cost; preserves
+# the documented insertion entry point as a single named class for audits.
+-keep class com.aikeyboard.app.ai.sticker.StickerCommitter {
+    public static *** insert(...);
+    static *** acceptsWebp(...);
+}

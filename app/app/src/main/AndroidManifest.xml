@@ -135,6 +135,21 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/gesture_data_path"/>
         </provider>
+
+        <!-- Phase 9a: sticker engine. Distinct authority from GestureFileProvider so both
+             can coexist. exported=false + grantUriPermissions=true is the standard
+             COMMIT_CONTENT pattern; the IME explicitly grants per-URI read access via
+             INPUT_CONTENT_GRANT_READ_URI_PERMISSION. -->
+        <provider
+            android:name="com.aikeyboard.app.ai.sticker.StickerFileProvider"
+            android:authorities="${applicationId}.stickers"
+            android:enabled="true"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/sticker_paths"/>
+        </provider>
     </application>
 
     <queries>

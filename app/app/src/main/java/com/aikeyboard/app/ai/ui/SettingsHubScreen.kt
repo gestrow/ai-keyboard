@@ -27,6 +27,7 @@ fun SettingsHubScreen(
     onOpenKeyboardChrome: () -> Unit,
     onOpenBackends: () -> Unit,
     onOpenAlwaysOn: () -> Unit,
+    onOpenStickers: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -60,6 +61,13 @@ fun SettingsHubScreen(
                 descriptionRes = R.string.ai_settings_hub_always_on_desc,
                 iconRes = R.drawable.ic_read_respond,
                 onClick = onOpenAlwaysOn,
+            )
+            HorizontalDivider()
+            HubRow(
+                titleRes = R.string.ai_settings_hub_stickers_title,
+                descriptionRes = R.string.ai_settings_hub_stickers_desc,
+                iconRes = R.drawable.ic_sticker,
+                onClick = onOpenStickers,
             )
             HorizontalDivider()
         }

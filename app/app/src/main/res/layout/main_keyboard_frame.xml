@@ -77,4 +77,11 @@
 
     </com.aikeyboard.app.latin.KeyboardWrapperView>
 
+    <com.aikeyboard.app.ai.sticker.picker.StickerPickerView
+        android:id="@+id/ai_sticker_picker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="240dp"
+        android:visibility="gone" />
+
 </LinearLayout>

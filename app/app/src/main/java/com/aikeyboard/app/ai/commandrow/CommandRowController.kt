@@ -6,6 +6,8 @@ import android.inputmethodservice.InputMethodService
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.widget.PopupMenu
 import android.widget.Toast
@@ -20,9 +22,14 @@ import com.aikeyboard.app.ai.client.AiStreamEvent
 import com.aikeyboard.app.ai.client.BackendResolver
 import com.aikeyboard.app.ai.persona.Persona
 import com.aikeyboard.app.ai.preview.PreviewStripView
+import com.aikeyboard.app.ai.sticker.StickerCommitter
+import com.aikeyboard.app.ai.sticker.StickerStorage
+import com.aikeyboard.app.ai.sticker.picker.StickerPickerView
 import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.ui.AiSettingsActivity
+import com.aikeyboard.app.ai.ui.AiSettingsRoutes
 import com.aikeyboard.app.latin.R
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,6 +55,14 @@ class CommandRowController @JvmOverloads constructor(
     // was a non-empty selection; the field/range case stores (-1, -1) and is treated as
     // "replace the entire field around the cursor".
     private var usedSelectionRange: IntRange? = null
+
+    private var stickerPicker: StickerPickerView? = null
+    // Cached sibling reference. Set in setStickerPicker so picker visibility flips
+    // don't have to walk the view tree each time. Both views live in the same
+    // LinearLayout in main_keyboard_frame.xml.
+    private var keyboardWrapper: View? = null
+    private val stickerStorage: StickerStorage = StickerStorage.getInstance(ime)
+    private var cachedEditorInfo: EditorInfo? = null
 
     init {
         view.listener = this
@@ -269,7 +284,87 @@ class CommandRowController @JvmOverloads constructor(
     }
 
     override fun onStickerTap() {
-        Log.d(TAG, "Sticker tab tapped (Phase 9)")
+        if (stickerPicker == null) return
+        refreshPickerData()
+        showPicker()
+    }
+
+    fun setStickerPicker(view: StickerPickerView) {
+        stickerPicker = view
+        keyboardWrapper = (view.parent as? ViewGroup)?.findViewById(R.id.keyboard_view_wrapper)
+        view.listener = object : StickerPickerView.Listener {
+            override fun onStickerSelected(packId: String, stickerId: String) {
+                commitSticker(packId, stickerId)
+            }
+            override fun onImportRequested() {
+                launchSettingsAtStickers()
+            }
+            override fun onDismissRequested() {
+                hidePicker()
+            }
+        }
+    }
+
+    /** Invoked from LatinIME.onStartInputViewInternal so the picker is dismissed
+     *  on every input transition (including transitions where editorInfo is null).
+     *  cachedEditorInfo gives commitSticker a stable handle even if
+     *  getCurrentInputEditorInfo() momentarily returns null mid-transition. */
+    fun onInputStarted(editorInfo: EditorInfo?) {
+        cachedEditorInfo = editorInfo
+        if (stickerPicker?.isVisible == true) hidePicker()
+    }
+
+    private fun refreshPickerData() {
+        val picker = stickerPicker ?: return
+        val packs = stickerStorage.getManifest().packs
+        picker.bind(packs) { packId ->
+            File(ime.filesDir, "stickers/packs/$packId")
+        }
+    }
+
+    private fun showPicker() {
+        stickerPicker?.visibility = View.VISIBLE
+        keyboardWrapper?.visibility = View.GONE
+    }
+
+    private fun hidePicker() {
+        stickerPicker?.visibility = View.GONE
+        keyboardWrapper?.visibility = View.VISIBLE
+    }
+
+    private fun commitSticker(packId: String, stickerId: String) {
+        val manifest = stickerStorage.getManifest()
+        val pack = manifest.packs.firstOrNull { it.id == packId } ?: return
+        val sticker = pack.stickers.firstOrNull { it.id == stickerId } ?: return
+        val file = stickerStorage.stickerFile(packId, sticker.fileName)
+        if (!file.exists()) {
+            toast(R.string.ai_stickers_commit_missing_file)
+            return
+        }
+        val authority = "${ime.packageName}.stickers"
+        val result = StickerCommitter.insert(
+            context = ime,
+            ic = ime.currentInputConnection,
+            editorInfo = cachedEditorInfo ?: ime.currentInputEditorInfo,
+            stickerFile = file,
+            authority = authority,
+        )
+        when (result) {
+            StickerCommitter.Result.OK -> hidePicker()
+            StickerCommitter.Result.NO_CONNECTION -> toast(R.string.ai_stickers_commit_no_connection)
+            StickerCommitter.Result.UNSUPPORTED_FIELD -> toast(R.string.ai_stickers_commit_unsupported)
+            StickerCommitter.Result.FAILED -> toast(R.string.ai_stickers_commit_failed)
+        }
+    }
+
+    private fun launchSettingsAtStickers() {
+        // Hide BEFORE startActivity so the user doesn't see a flash of the picker
+        // while the IME deactivates.
+        hidePicker()
+        val intent = Intent(ime, AiSettingsActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra(AiSettingsActivity.EXTRA_DEEP_LINK_ROUTE, AiSettingsRoutes.STICKERS_LIST)
+        ime.startActivity(intent)
     }
 
     override fun onSettingsTap() {

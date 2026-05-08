@@ -221,4 +221,33 @@
     <string name="ai_stickers_commit_unsupported">This app doesn\'t accept stickers. Add this pack to WhatsApp to send them there.</string>
     <string name="ai_stickers_commit_failed">Couldn\'t insert sticker, try again</string>
     <string name="ai_stickers_commit_missing_file">Sticker file missing</string>
+
+    <!-- Phase 9b: WhatsApp sticker pack contract + tray icon + multi-pack tabs. -->
+
+    <!-- Tray icon picker -->
+    <string name="ai_stickers_tray_section">Tray icon</string>
+    <string name="ai_stickers_tray_hint">96×96 PNG. Shown as the pack icon in WhatsApp\'s sticker tray.</string>
+    <string name="ai_stickers_tray_choose">Choose tray icon</string>
+    <string name="ai_stickers_tray_replace">Replace tray icon</string>
+
+    <!-- Publisher field -->
+    <string name="ai_stickers_pack_publisher_label">Publisher</string>
+    <string name="ai_stickers_pack_publisher_hint">Required for WhatsApp. Shown as the pack author.</string>
+
+    <!-- Per-sticker emoji editor -->
+    <string name="ai_stickers_emoji_hint">1–3, separated by spaces</string>
+
+    <!-- Add to WhatsApp -->
+    <string name="ai_stickers_whatsapp_add">Add to WhatsApp</string>
+    <string name="ai_stickers_whatsapp_not_installed">WhatsApp isn\'t installed. Stickers stay usable for sending in Telegram, Signal, Discord, and other apps.</string>
+
+    <!-- Validation chips (one per StickerPackValidator.Issue) -->
+    <string name="ai_stickers_validation_too_few">Add at least 3 stickers</string>
+    <string name="ai_stickers_validation_too_many">Pack can have at most 30 stickers</string>
+    <string name="ai_stickers_validation_no_tray">Add a tray icon (96×96 PNG)</string>
+    <string name="ai_stickers_validation_no_publisher">Set a publisher name</string>
+    <string name="ai_stickers_validation_name_long">Pack name too long (max 128)</string>
+    <string name="ai_stickers_validation_publisher_long">Publisher name too long (max 128)</string>
+    <string name="ai_stickers_validation_id_invalid">Pack ID has an invalid character — recreate the pack</string>
+
 </resources>

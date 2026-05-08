@@ -1,10 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
+
+        <!-- Phase 9b carry-over #1 fix: in-picker error banner. Replaces the
+             COMMIT_CONTENT toast path, which rendered behind the picker because
+             Toast.LENGTH_SHORT defaults to Gravity.BOTTOM. visibility=gone by
+             default; flipped visible by StickerPickerView.showError(stringRes)
+             with a 2.5s auto-dismiss. -->
+        <TextView
+            android:id="@+id/sticker_picker_error_chip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:visibility="gone"
+            tools:text="Error message"
+            tools:visibility="visible" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -34,6 +51,16 @@
                 android:src="@drawable/ic_ai_settings_gear"
                 android:contentDescription="@string/ai_stickers_picker_import_desc" />
         </LinearLayout>
+
+        <!-- Phase 9b: horizontal pack-tab strip. 48dp tab + 8dp top/bottom padding
+             = 64dp total. Each pack is a deliberate organizational unit per
+             WhatsApp's contract. -->
+        <com.aikeyboard.app.ai.sticker.picker.StickerPackTabsView
+            android:id="@+id/sticker_picker_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:paddingVertical="8dp"
+            android:clipToPadding="false" />
 
         <FrameLayout
             android:layout_width="match_parent"

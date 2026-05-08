@@ -15,6 +15,17 @@ data class StickerPack(
     val name: String,
     val createdAt: Long,
     val stickers: List<Sticker> = emptyList(),
+    /** Phase 9b: filename relative to the pack directory of the 96×96 PNG tray icon.
+     *  Null until the user chooses one in pack-edit. WhatsApp requires a tray icon. */
+    val trayIconFile: String? = null,
+    /** Phase 9b: pack publisher shown in WhatsApp's pack list. Required by WhatsApp. */
+    val publisher: String = "",
+    /** Phase 9b: monotonic version per pack. Bumped by StickerStorage on every
+     *  mutation that touches the pack (rename / sticker add+delete+edit / tray /
+     *  publisher). WhatsApp re-fetches a pack whenever this differs from its cache. */
+    val imageDataVersion: Long = 1L,
+    /** Phase 9b: WhatsApp's "do not cache" hint. Default false; v1 doesn't surface a UI. */
+    val avoidCache: Boolean = false,
 )
 
 @Serializable

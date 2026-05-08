@@ -17,9 +17,20 @@ class StickerGridAdapter(
 
     private var data: List<Pair<String, Sticker>> = emptyList()
 
-    fun update(items: List<Pair<String, Sticker>>, resolver: (String) -> File) {
+    /**
+     * @param items every (packId, sticker) pair across all packs.
+     * @param resolver decoder of pack-id → on-disk pack directory.
+     * @param selectedPackId Phase 9b: when non-null, only stickers belonging to
+     *   the matching pack are rendered. Default null = render every item (flat
+     *   "across all packs" view).
+     */
+    fun update(
+        items: List<Pair<String, Sticker>>,
+        resolver: (String) -> File,
+        selectedPackId: String? = null,
+    ) {
         packDirResolver = resolver
-        data = items
+        data = if (selectedPackId == null) items else items.filter { it.first == selectedPackId }
         @Suppress("NotifyDataSetChanged") // Phase 9a: tiny grids, DiffUtil deferred to Phase 12.
         notifyDataSetChanged()
     }

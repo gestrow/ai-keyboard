@@ -338,7 +338,7 @@ class CommandRowController @JvmOverloads constructor(
         val sticker = pack.stickers.firstOrNull { it.id == stickerId } ?: return
         val file = stickerStorage.stickerFile(packId, sticker.fileName)
         if (!file.exists()) {
-            toast(R.string.ai_stickers_commit_missing_file)
+            stickerPicker?.showError(R.string.ai_stickers_commit_missing_file)
             return
         }
         val authority = "${ime.packageName}.stickers"
@@ -349,11 +349,17 @@ class CommandRowController @JvmOverloads constructor(
             stickerFile = file,
             authority = authority,
         )
+        // Phase 9b carry-over #1 fix: in-picker error chips replace the toasts.
+        // Toast.LENGTH_SHORT defaults to Gravity.BOTTOM with a small y-offset,
+        // so the toast rendered behind the (~280dp) picker and was invisible.
         when (result) {
             StickerCommitter.Result.OK -> hidePicker()
-            StickerCommitter.Result.NO_CONNECTION -> toast(R.string.ai_stickers_commit_no_connection)
-            StickerCommitter.Result.UNSUPPORTED_FIELD -> toast(R.string.ai_stickers_commit_unsupported)
-            StickerCommitter.Result.FAILED -> toast(R.string.ai_stickers_commit_failed)
+            StickerCommitter.Result.NO_CONNECTION ->
+                stickerPicker?.showError(R.string.ai_stickers_commit_no_connection)
+            StickerCommitter.Result.UNSUPPORTED_FIELD ->
+                stickerPicker?.showError(R.string.ai_stickers_commit_unsupported)
+            StickerCommitter.Result.FAILED ->
+                stickerPicker?.showError(R.string.ai_stickers_commit_failed)
         }
     }
 

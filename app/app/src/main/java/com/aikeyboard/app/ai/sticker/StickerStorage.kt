@@ -74,9 +74,40 @@ class StickerStorage @VisibleForTesting internal constructor(
         }
     }
 
+    fun setTrayIcon(packId: String, fileName: String) {
+        update { manifest ->
+            manifest.copy(packs = manifest.packs.map {
+                if (it.id == packId) it.copy(trayIconFile = fileName) else it
+            })
+        }
+    }
+
+    fun setPublisher(packId: String, publisher: String) {
+        update { manifest ->
+            manifest.copy(packs = manifest.packs.map {
+                if (it.id == packId) it.copy(publisher = publisher) else it
+            })
+        }
+    }
+
+    fun setStickerEmojis(packId: String, stickerId: String, emojis: List<String>) {
+        update { manifest ->
+            manifest.copy(packs = manifest.packs.map { p ->
+                if (p.id != packId) p
+                else p.copy(stickers = p.stickers.map { s ->
+                    if (s.id == stickerId) s.copy(emojis = emojis) else s
+                })
+            })
+        }
+    }
+
     /** Where StickerNormalizer should write a new sticker file. The pack directory
      *  is created by createPack; callers can re-mkdirs the parent for orphan recovery. */
     fun stickerFile(packId: String, fileName: String): File =
+        File(rootDir, "packs/$packId/$fileName")
+
+    /** Where TrayIconNormalizer should write a new tray icon. Sibling of [stickerFile]. */
+    fun trayIconFile(packId: String, fileName: String): File =
         File(rootDir, "packs/$packId/$fileName")
 
     /** First-import helper. Returns the existing first pack, creating one with [defaultName] if absent. */
@@ -89,12 +120,33 @@ class StickerStorage @VisibleForTesting internal constructor(
     private fun update(transform: (StickerManifest) -> StickerManifest) {
         synchronized(this) {
             val current = getManifest()
-            val next = transform(current)
+            val transformed = transform(current)
+            // Phase 9b: bump imageDataVersion for each pack whose content-bearing tuple
+            // changed. WhatsApp re-fetches a pack when this differs from its cache.
+            val priorById = current.packs.associateBy { it.id }
+            val next = transformed.copy(packs = transformed.packs.map { newPack ->
+                val priorPack = priorById[newPack.id]
+                if (priorPack != null && !packsContentEqual(priorPack, newPack)) {
+                    newPack.copy(imageDataVersion = newPack.imageDataVersion + 1)
+                } else {
+                    newPack
+                }
+            })
             persist(next)
             cached = next
             _changes.value += 1
         }
     }
+
+    /** Two packs are content-equal when their WhatsApp-visible state matches. The
+     *  imageDataVersion field itself and createdAt do NOT contribute (otherwise
+     *  the bump would cascade indefinitely / be a no-op). */
+    private fun packsContentEqual(a: StickerPack, b: StickerPack): Boolean =
+        a.name == b.name &&
+            a.publisher == b.publisher &&
+            a.trayIconFile == b.trayIconFile &&
+            a.avoidCache == b.avoidCache &&
+            a.stickers == b.stickers
 
     private fun load(): StickerManifest {
         val file = File(rootDir, MANIFEST_FILE)

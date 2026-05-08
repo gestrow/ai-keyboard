@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phase 9b: a single tab cell in the picker's pack-tabs strip.
+    - Overdraw: parent StickerPackTabsView paints STRIP_BACKGROUND once across
+      the whole strip; each tab additionally paints the framework ripple drawable
+      so taps have visible feedback. The intentional double-paint is a UX
+      requirement (rippled press feedback over a themed strip), not a regression.
+    - ContentDescription: the adapter sets contentDescription dynamically per
+      pack (= pack.name), so a static value here would be wrong.
+-->
+<ImageButton
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:layout_marginHorizontal="4dp"
+    android:padding="6dp"
+    android:scaleType="fitCenter"
+    android:background="?android:attr/selectableItemBackgroundBorderless"
+    tools:ignore="Overdraw,ContentDescription" />

@@ -79,3 +79,21 @@
     public static *** insert(...);
     static *** acceptsWebp(...);
 }
+
+# Phase 9b: keep singleton objects observable in dex. Same precedent as
+# Phase 6's BackendResolver, Phase 7b's ReadRespondPromptBuilder, and
+# Phase 9a's StickerCommitter — R8 inlines single-call-site singletons in
+# this codebase. WhatsAppStickerContentProvider does NOT need an explicit
+# keep rule (manifest-referenced ContentProviders are kept by R8's defaults).
+-keep class com.aikeyboard.app.ai.sticker.TrayIconNormalizer {
+    public static *** normalize(...);
+    static *** encodeFitting(...);
+}
+-keep class com.aikeyboard.app.ai.sticker.StickerPackValidator {
+    public static *** validate(...);
+}
+-keep class com.aikeyboard.app.ai.sticker.AddToWhatsAppHelper {
+    public static *** status(...);
+    public static *** buildIntent(...);
+    static *** statusFromInstalled(...);
+}

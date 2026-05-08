@@ -150,6 +150,22 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/sticker_paths"/>
         </provider>
+
+        <!-- Phase 9b: WhatsApp sticker pack contract. WhatsApp does NOT use
+             COMMIT_CONTENT; it queries this ContentProvider directly from its
+             own process (com.whatsapp / com.whatsapp.w4b) to fetch pack
+             metadata + sticker bytes. exported=true because WhatsApp must
+             reach it cross-process; in-code calling-package gating
+             (assertAllowedCaller) restricts to the two WhatsApp packages.
+             grantUriPermissions=false because we serve files via
+             openAssetFile not URI grants. Distinct authority from
+             StickerFileProvider's per Android docs. -->
+        <provider
+            android:name="com.aikeyboard.app.ai.sticker.WhatsAppStickerContentProvider"
+            android:authorities="${applicationId}.whatsapp.stickers"
+            android:exported="true"
+            android:grantUriPermissions="false"
+            tools:ignore="ExportedContentProvider" />
     </application>
 
     <queries>
@@ -169,5 +185,12 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
         <!-- Phase 5b: package visibility for resolving Termux's
              RunCommandService component (Android 11+). -->
         <package android:name="com.termux" />
+
+        <!-- Phase 9b: package visibility for AddToWhatsAppHelper.status() and
+             the ENABLE_STICKER_PACK intent resolution. Without these,
+             packageManager.queryIntentActivities / getPackageInfo return
+             empty for these packages on Android 11+. -->
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
     </queries>
 </manifest>

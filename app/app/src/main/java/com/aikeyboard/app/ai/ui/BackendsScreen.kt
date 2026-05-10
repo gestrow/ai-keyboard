@@ -37,6 +37,7 @@ import com.aikeyboard.app.ai.client.Provider
 import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.termux.TermuxOrchestrator
 import com.aikeyboard.app.latin.R
+import java.net.URI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +45,7 @@ fun BackendsScreen(
     onBack: () -> Unit,
     onEditProvider: (Provider) -> Unit,
     onOpenTermuxBridge: () -> Unit,
+    onOpenLocalLanEdit: () -> Unit,
 ) {
     val context = LocalContext.current
     val storage = remember { SecureStorage.getInstance(context) }
@@ -53,6 +55,8 @@ fun BackendsScreen(
     var termuxAuthCount by remember { mutableStateOf<Int?>(null) }
     var activeStrategy by remember { mutableStateOf(storage.getSelectedBackendStrategy()) }
     var activeRemoteProvider by remember { mutableStateOf(storage.getSelectedProvider()) }
+    var localLanBaseUrl by remember { mutableStateOf(storage.getLocalLanBaseUrl()) }
+    var localLanModelName by remember { mutableStateOf(storage.getLocalLanModelName()) }
     // Bumped each ON_RESUME so the async Termux probe and stored-selection rederivation
     // re-run after the user comes back from the status screen (where bridge state +
     // selectedTermuxProvider can change). Without this, the screen would render stale
@@ -66,6 +70,8 @@ fun BackendsScreen(
                 configured = storage.getConfiguredProviders()
                 activeStrategy = storage.getSelectedBackendStrategy()
                 activeRemoteProvider = storage.getSelectedProvider()
+                localLanBaseUrl = storage.getLocalLanBaseUrl()
+                localLanModelName = storage.getLocalLanModelName()
                 resumeCount += 1
             }
         }
@@ -83,6 +89,7 @@ fun BackendsScreen(
 
     val termuxSelectable = termuxStatus == TermuxOrchestrator.Status.BRIDGE_RUNNING
         && (termuxAuthCount ?: 0) > 0
+    val localLanSelectable = localLanBaseUrl.isNotEmpty() && localLanModelName.isNotEmpty()
 
     Scaffold(
         topBar = {
@@ -147,6 +154,38 @@ fun BackendsScreen(
                 HorizontalDivider()
             }
 
+            val localLanActive = activeStrategy == BackendStrategy.LOCAL_LAN
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenLocalLanEdit() },
+                leadingContent = {
+                    RadioButton(
+                        selected = localLanActive,
+                        enabled = localLanSelectable,
+                        onClick = if (localLanSelectable) {
+                            {
+                                storage.setSelectedBackendStrategy(BackendStrategy.LOCAL_LAN)
+                                activeStrategy = BackendStrategy.LOCAL_LAN
+                            }
+                        } else null,
+                    )
+                },
+                headlineContent = {
+                    Text(stringResource(R.string.ai_settings_backend_locallan_title))
+                },
+                supportingContent = {
+                    Text(localLanStatusText(localLanBaseUrl, localLanModelName))
+                },
+                trailingContent = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_chevron_right),
+                        contentDescription = null,
+                    )
+                },
+            )
+            HorizontalDivider()
+
             val termuxActive = activeStrategy == BackendStrategy.TERMUX_BRIDGE
             ListItem(
                 modifier = Modifier
@@ -190,6 +229,19 @@ fun BackendsScreen(
             )
             HorizontalDivider()
         }
+    }
+}
+
+@Composable
+private fun localLanStatusText(baseUrl: String, modelName: String): String {
+    if (baseUrl.isEmpty()) {
+        return stringResource(R.string.ai_settings_backend_locallan_desc_unconfigured)
+    }
+    val host = runCatching { URI(baseUrl).host }.getOrNull()?.takeIf { it.isNotEmpty() } ?: baseUrl
+    return if (modelName.isEmpty()) {
+        stringResource(R.string.ai_settings_backend_locallan_status_model_required, host)
+    } else {
+        stringResource(R.string.ai_settings_backend_locallan_status_configured, host, modelName)
     }
 }
 

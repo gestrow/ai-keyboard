@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.aikeyboard.app.ai.client
 
+import com.aikeyboard.app.ai.client.locallan.LocalLanBackend
 import com.aikeyboard.app.ai.client.remote.RemoteApiBackend
 import com.aikeyboard.app.ai.client.termux.TermuxBridgeBackend
 import com.aikeyboard.app.ai.storage.SecureStorage
@@ -17,8 +18,8 @@ import com.aikeyboard.app.ai.storage.SecureStorage
  * layer. {@link BackendResolverTest} exercises each branch with mocked storage.
  */
 object BackendResolver {
-    fun resolve(storage: SecureStorage): AiClient? =
-        when (storage.getSelectedBackendStrategy()) {
+    fun resolve(storage: SecureStorage): AiClient? {
+        return when (storage.getSelectedBackendStrategy()) {
             BackendStrategy.REMOTE_API -> {
                 val provider = storage.getSelectedProvider() ?: return null
                 RemoteApiBackend(provider, storage)
@@ -27,6 +28,17 @@ object BackendResolver {
                 val cli = storage.getSelectedTermuxProvider() ?: return null
                 TermuxBridgeBackend(cli)
             }
-            BackendStrategy.LOCAL_LAN -> null  // Phase 10
+            BackendStrategy.LOCAL_LAN -> {
+                val baseUrl = storage.getLocalLanBaseUrl()
+                val model = storage.getLocalLanModelName()
+                if (baseUrl.isEmpty() || model.isEmpty()) return null
+                LocalLanBackend(
+                    baseUrl = baseUrl,
+                    apiFormat = storage.getLocalLanApiFormat(),
+                    apiKey = storage.getLocalLanApiKey(),
+                    modelName = model,
+                )
+            }
         }
+    }
 }

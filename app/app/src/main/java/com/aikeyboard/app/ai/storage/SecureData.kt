@@ -35,4 +35,12 @@ internal data class SecureData(
     // restarts the service after reboot. Flipping to true requires a11y
     // permission, POST_NOTIFICATIONS (Android 13+), and readRespondConsented.
     val alwaysOnEnabled: Boolean = false,
+    // Phase 10: Local LAN backend configuration. All default-valued so existing
+    // SecureData blobs decode without migration. localLanApiFormat is String?
+    // (not the enum directly) for the same null-defaults-to-OLLAMA pattern as
+    // selectedBackendStrategy.
+    val localLanBaseUrl: String = "",
+    val localLanApiFormat: String? = null,
+    val localLanApiKey: String = "",
+    val localLanModelName: String = "",
 )

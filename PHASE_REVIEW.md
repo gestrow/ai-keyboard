@@ -375,7 +375,7 @@ Inserted after Phase 2 because device testing revealed chrome density and theme-
 - Settings UI: base URL, optional API key, optional model name
 - `networkSecurityConfig.xml` allows cleartext only for: `127.0.0.1`, RFC1918 ranges (`10/8`, `172.16/12`, `192.168/16`), and the user-configured host
 - Validation: if user enters a public IP, warn before allowing cleartext
-- Compatible with Ollama (`/api/generate`), OpenAI-compatible servers (`/v1/chat/completions`)
+- Compatible with Ollama (`/api/chat` — the multi-turn chat endpoint with `messages` array; `/api/generate` is the older single-turn endpoint and is not used) and OpenAI-compatible servers (`/v1/chat/completions`)
 
 **Smoke test:**
 - Point at local Ollama on LAN — works

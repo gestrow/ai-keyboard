@@ -250,4 +250,27 @@
     <string name="ai_stickers_validation_publisher_long">Publisher name too long (max 128)</string>
     <string name="ai_stickers_validation_id_invalid">Pack ID has an invalid character — recreate the pack</string>
 
+    <!-- Phase 10: LocalLanBackend -->
+    <string name="ai_settings_backend_locallan_title">Local LAN</string>
+    <string name="ai_settings_backend_locallan_desc_unconfigured">Not configured</string>
+    <!-- "host · model" — interpolated at render time -->
+    <string name="ai_settings_backend_locallan_status_configured">%1$s · %2$s</string>
+    <string name="ai_settings_backend_locallan_status_model_required">%1$s · model required</string>
+
+    <string name="ai_settings_locallan_edit_title">Local LAN backend</string>
+    <string name="ai_settings_locallan_base_url_label">Base URL</string>
+    <string name="ai_settings_locallan_base_url_hint" translatable="false">http://192.168.1.42:11434</string>
+    <string name="ai_settings_locallan_format_label">API format</string>
+    <string name="ai_settings_locallan_format_ollama">Ollama (default)</string>
+    <string name="ai_settings_locallan_format_openai">OpenAI-compatible</string>
+    <string name="ai_settings_locallan_model_label">Model name</string>
+    <string name="ai_settings_locallan_model_hint" translatable="false">llama3.2</string>
+    <string name="ai_settings_locallan_apikey_label">API key (optional)</string>
+    <string name="ai_settings_locallan_apikey_help">Some servers (LM Studio, vLLM with auth) require a Bearer token. Leave blank if your server doesn\'t.</string>
+    <string name="ai_settings_locallan_save">Save</string>
+
+    <string name="ai_settings_locallan_public_ip_title">Public IP without HTTPS</string>
+    <string name="ai_settings_locallan_public_ip_body">The address you entered is a public IP. Cleartext traffic to public hosts is a privacy risk — your prompts and the model\'s replies are sent unencrypted across the internet. Only continue if you control the destination network.</string>
+    <string name="ai_settings_locallan_save_anyway">Save anyway</string>
+
 </resources>

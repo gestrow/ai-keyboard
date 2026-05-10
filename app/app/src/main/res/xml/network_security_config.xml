@@ -2,11 +2,20 @@
 <!--
     AI Keyboard network security config.
     Phase 3a: HTTPS-only for the two remote-API providers we ship with.
-    Phase 4: cleartext for 127.0.0.1 / localhost so the IME can talk to the
-    Termux bridge (loopback only). Phase 10 expands to user-configured RFC1918.
+    Phase 4: cleartext for 127.0.0.1 / localhost (Termux bridge).
+    Phase 10: base-config now permits cleartext globally so the user-configured
+    Local LAN backend can talk to any RFC1918 / mDNS / hostname destination.
+    The privacy compensator is in code: LocalLanBackend is the ONLY backend
+    whose URL is user-controlled, and PublicIpValidator warns the user before
+    saving a cleartext URL whose host classifies as PUBLIC. The two HTTPS-only
+    domain-configs below stay as defense-in-depth and continue to forbid
+    cleartext to those hostnames even though base-config allows it elsewhere.
 -->
-<network-security-config>
-    <base-config cleartextTrafficPermitted="false">
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <!--suppress AndroidElementNotAllowed -->
+    <base-config
+        cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
@@ -17,9 +26,5 @@
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
-    </domain-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">127.0.0.1</domain>
-        <domain includeSubdomains="false">localhost</domain>
     </domain-config>
 </network-security-config>

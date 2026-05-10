@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.aikeyboard.app.ai.client
 
+import com.aikeyboard.app.ai.client.locallan.LocalLanApiFormat
+import com.aikeyboard.app.ai.client.locallan.LocalLanBackend
 import com.aikeyboard.app.ai.client.remote.RemoteApiBackend
 import com.aikeyboard.app.ai.client.termux.TermuxBridgeBackend
 import com.aikeyboard.app.ai.storage.SecureStorage
@@ -63,10 +65,36 @@ class BackendResolverTest {
     }
 
     @Test
-    fun localLan_alwaysReturnsNull_phase10Owns() {
+    fun localLan_unconfigured_returnsNull() {
         val storage = mock(SecureStorage::class.java)
         `when`(storage.getSelectedBackendStrategy()).thenReturn(BackendStrategy.LOCAL_LAN)
+        `when`(storage.getLocalLanBaseUrl()).thenReturn("")
+        `when`(storage.getLocalLanModelName()).thenReturn("")
 
         assertNull(BackendResolver.resolve(storage))
+    }
+
+    @Test
+    fun localLan_baseUrlSetButNoModel_returnsNull() {
+        val storage = mock(SecureStorage::class.java)
+        `when`(storage.getSelectedBackendStrategy()).thenReturn(BackendStrategy.LOCAL_LAN)
+        `when`(storage.getLocalLanBaseUrl()).thenReturn("http://192.168.1.42:11434")
+        `when`(storage.getLocalLanModelName()).thenReturn("")
+
+        assertNull(BackendResolver.resolve(storage))
+    }
+
+    @Test
+    fun localLan_fullyConfigured_returnsLocalLanBackend() {
+        val storage = mock(SecureStorage::class.java)
+        `when`(storage.getSelectedBackendStrategy()).thenReturn(BackendStrategy.LOCAL_LAN)
+        `when`(storage.getLocalLanBaseUrl()).thenReturn("http://192.168.1.42:11434")
+        `when`(storage.getLocalLanModelName()).thenReturn("llama3.2")
+        `when`(storage.getLocalLanApiFormat()).thenReturn(LocalLanApiFormat.OLLAMA)
+        `when`(storage.getLocalLanApiKey()).thenReturn("")
+
+        val client = BackendResolver.resolve(storage)
+        assertNotNull(client)
+        assertTrue(client is LocalLanBackend)
     }
 }

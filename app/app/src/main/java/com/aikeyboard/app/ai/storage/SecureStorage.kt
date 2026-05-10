@@ -6,6 +6,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.aikeyboard.app.ai.client.BackendStrategy
 import com.aikeyboard.app.ai.client.Provider
+import com.aikeyboard.app.ai.client.locallan.LocalLanApiFormat
 import com.aikeyboard.app.ai.persona.DefaultPersonas
 import com.aikeyboard.app.ai.persona.Persona
 import com.aikeyboard.app.latin.utils.Log
@@ -175,6 +176,41 @@ class SecureStorage private constructor(private val appContext: Context) {
     @Synchronized
     fun setAlwaysOnEnabled(enabled: Boolean) {
         save(load().copy(alwaysOnEnabled = enabled))
+    }
+
+    @Synchronized
+    fun getLocalLanBaseUrl(): String = load().localLanBaseUrl
+
+    @Synchronized
+    fun setLocalLanBaseUrl(url: String) {
+        save(load().copy(localLanBaseUrl = url.trim()))
+    }
+
+    @Synchronized
+    fun getLocalLanApiFormat(): LocalLanApiFormat =
+        load().localLanApiFormat
+            ?.let { runCatching { LocalLanApiFormat.valueOf(it) }.getOrNull() }
+            ?: LocalLanApiFormat.OLLAMA
+
+    @Synchronized
+    fun setLocalLanApiFormat(format: LocalLanApiFormat) {
+        save(load().copy(localLanApiFormat = format.name))
+    }
+
+    @Synchronized
+    fun getLocalLanApiKey(): String = load().localLanApiKey
+
+    @Synchronized
+    fun setLocalLanApiKey(key: String) {
+        save(load().copy(localLanApiKey = key.trim()))
+    }
+
+    @Synchronized
+    fun getLocalLanModelName(): String = load().localLanModelName
+
+    @Synchronized
+    fun setLocalLanModelName(name: String) {
+        save(load().copy(localLanModelName = name.trim()))
     }
 
     private fun load(): SecureData {

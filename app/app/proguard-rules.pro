@@ -97,3 +97,11 @@
     public static *** buildIntent(...);
     static *** statusFromInstalled(...);
 }
+
+# Phase 10: keep LocalLanBackend observable in dex. Single call site
+# (BackendResolver.LOCAL_LAN branch) — same R8 inlining pattern as
+# BackendResolver, ReadRespondPromptBuilder, StickerCommitter.
+-keep class com.aikeyboard.app.ai.client.locallan.LocalLanBackend {
+    public <init>(...);
+    public *** rewrite(...);
+}

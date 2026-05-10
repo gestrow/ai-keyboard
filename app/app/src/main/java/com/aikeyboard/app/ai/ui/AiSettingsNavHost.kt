@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.ui.alwayson.AlwaysOnRoute
+import com.aikeyboard.app.ai.ui.locallan.LocalLanEditRoute
 import com.aikeyboard.app.ai.ui.stickers.StickerPackEditRoute
 import com.aikeyboard.app.ai.ui.stickers.StickerPacksRoute
 import com.aikeyboard.app.ai.ui.termux.TermuxBridgeRoute
@@ -22,6 +23,7 @@ object AiSettingsRoutes {
     const val BACKENDS_LIST = "backends/list"
     const val BACKENDS_EDIT = "backends/edit"
     const val BACKENDS_TERMUX = "backends/termux"
+    const val BACKENDS_LOCALLAN_EDIT = "backends/locallan/edit"
     const val ALWAYS_ON = "always-on"
     const val STICKERS_LIST = "stickers/list"
     const val STICKERS_EDIT = "stickers/edit"
@@ -88,10 +90,14 @@ fun AiSettingsNavHost(
                     nav.navigate(AiSettingsRoutes.editBackendRoute(provider.storageKey))
                 },
                 onOpenTermuxBridge = { nav.navigate(AiSettingsRoutes.BACKENDS_TERMUX) },
+                onOpenLocalLanEdit = { nav.navigate(AiSettingsRoutes.BACKENDS_LOCALLAN_EDIT) },
             )
         }
         composable(AiSettingsRoutes.BACKENDS_TERMUX) {
             TermuxBridgeRoute(onBack = { nav.popBackStack() })
+        }
+        composable(AiSettingsRoutes.BACKENDS_LOCALLAN_EDIT) {
+            LocalLanEditRoute(onBack = { nav.popBackStack() })
         }
         composable(AiSettingsRoutes.ALWAYS_ON) {
             val context = LocalContext.current

@@ -5,6 +5,8 @@ import com.aikeyboard.app.ai.client.AiClient
 import com.aikeyboard.app.ai.client.AiStreamEvent
 import com.aikeyboard.app.ai.client.ErrorType
 import com.aikeyboard.app.ai.client.Provider
+import com.aikeyboard.app.ai.client.locallan.LocalLanRequestBuilder
+import com.aikeyboard.app.ai.client.locallan.OpenAiCompatStreamParser
 import com.aikeyboard.app.ai.persona.FewShot
 import com.aikeyboard.app.ai.storage.SecureStorage
 import io.ktor.client.HttpClient
@@ -90,6 +92,7 @@ class RemoteApiBackend(
                 when (provider) {
                     Provider.ANTHROPIC -> streamAnthropic(response.bodyAsChannel())
                     Provider.GOOGLE_GEMINI -> streamGemini(response.bodyAsChannel())
+                    Provider.XAI_GROK -> streamGrok(response.bodyAsChannel())
                 }
             }
         } catch (te: TimeoutCancellationException) {
@@ -149,6 +152,34 @@ class RemoteApiBackend(
         }
         // Stream ended without an explicit message_stop event. Treat as done so the user
         // sees what was streamed rather than an error.
+        emit(AiStreamEvent.Done)
+    }
+
+    /**
+     * Consumes Grok's OpenAI-compatible SSE response (`/v1/chat/completions`
+     * with `stream:true`). Phase 11 reuses Phase 10's
+     * [OpenAiCompatStreamParser] verbatim so the two OpenAI-compat surfaces
+     * (LocalLan OPENAI_COMPATIBLE mode + this remote-HTTPS branch) share a
+     * single parser implementation.
+     *
+     * The parser's `emit` callback isn't a suspend context (verified at
+     * OpenAiCompatStreamParser.kt:39), so events are buffered into a local
+     * list and emitted into the surrounding FlowCollector after the parseLine
+     * call returns.
+     */
+    private suspend fun FlowCollector<AiStreamEvent>.streamGrok(channel: ByteReadChannel) {
+        while (!channel.isClosedForRead) {
+            val raw = channel.readUTF8Line() ?: break
+            val line = raw.trimEnd('\r')
+            val pending = mutableListOf<AiStreamEvent>()
+            OpenAiCompatStreamParser.parseLine(line) { event -> pending += event }
+            for (event in pending) {
+                emit(event)
+                if (event is AiStreamEvent.Done) return
+            }
+        }
+        // Channel closed without an explicit [DONE] sentinel — treat as done
+        // so the user sees what was streamed rather than a generic error.
         emit(AiStreamEvent.Done)
     }
 
@@ -214,6 +245,7 @@ class RemoteApiBackend(
         return when (provider) {
             Provider.ANTHROPIC -> buildAnthropicRequest(input, systemPrompt, fewShots, key, model)
             Provider.GOOGLE_GEMINI -> buildGeminiRequest(input, systemPrompt, fewShots, key, model)
+            Provider.XAI_GROK -> buildGrokRequest(input, systemPrompt, fewShots, key, model)
         }
     }
 
@@ -222,6 +254,9 @@ class RemoteApiBackend(
         private const val ANTHROPIC_MAX_TOKENS = 4096
         private const val ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
         private const val GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+        // Phase 11: xAI Grok exposes the OpenAI-compatible /v1/chat/completions
+        // endpoint over HTTPS. Bearer auth, no key in query string.
+        private const val GROK_URL = "https://api.x.ai/v1/chat/completions"
 
         private val parser = Json { ignoreUnknownKeys = true }
 
@@ -279,6 +314,33 @@ class RemoteApiBackend(
                     "accept" to "text/event-stream",
                 ),
                 jsonBody = Json.encodeToString(JsonObject.serializer(), body),
+            )
+        }
+
+        /**
+         * Builds the Grok HTTPS POST: OpenAI-compatible chat-completions body
+         * over LocalLanRequestBuilder's `openAiBody` helper, Bearer auth, JSON
+         * content type. The HTTPS endpoint is fixed (`api.x.ai/v1/chat/completions`)
+         * so the only privacy surface added by Phase 11 is the network_security_config
+         * `<domain>` entry.
+         */
+        internal fun buildGrokRequest(
+            input: String,
+            systemPrompt: String,
+            fewShots: List<FewShot>,
+            apiKey: String,
+            model: String,
+        ): RemoteApiRequest {
+            val messages = LocalLanRequestBuilder.buildMessages(input, systemPrompt, fewShots)
+            val body = LocalLanRequestBuilder.openAiBody(model = model, messages = messages)
+            return RemoteApiRequest(
+                url = GROK_URL,
+                headers = mapOf(
+                    "authorization" to "Bearer $apiKey",
+                    "content-type" to "application/json",
+                    "accept" to "text/event-stream",
+                ),
+                jsonBody = body,
             )
         }
 

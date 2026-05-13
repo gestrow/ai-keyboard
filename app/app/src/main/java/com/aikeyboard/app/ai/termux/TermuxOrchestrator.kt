@@ -56,6 +56,13 @@ class TermuxOrchestrator private constructor(private val appContext: Context) {
     enum class Provider(val cliName: String) {
         CLAUDE("claude"),
         GEMINI("gemini"),
+        // Phase 11: Codex routes through the bridge the same way Claude/Gemini
+        // do — TermuxBridgeBackend.cliProvider is a plain String matching the
+        // bridge's /providers `id` field (Phase 6 deliberate design), so adding
+        // a value here is sufficient to enable the `setup.sh --reauth codex`
+        // path. The bridge adapter (bridge/adapters/codex.js) was registered
+        // alongside this change.
+        CODEX("codex"),
     }
 
     enum class Status {

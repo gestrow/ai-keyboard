@@ -293,6 +293,7 @@ private fun providerForCliName(name: String): TermuxOrchestrator.Provider? =
 private fun displayName(cliName: String): String = when (cliName) {
     "claude" -> "Claude"
     "gemini" -> "Gemini"
+    "codex" -> "Codex"
     else -> cliName
 }
 

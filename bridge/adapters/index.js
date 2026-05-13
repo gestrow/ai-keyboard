@@ -5,10 +5,12 @@
 // bridge's normalized SSE shape ({type:"delta"|"done"|"error",...}).
 
 const { createClaudeAdapter } = require('./claude');
+const { createCodexAdapter } = require('./codex');
 const { createGeminiAdapter } = require('./gemini');
 
 const FACTORIES = {
   claude: createClaudeAdapter,
+  codex: createCodexAdapter,
   gemini: createGeminiAdapter,
 };
 

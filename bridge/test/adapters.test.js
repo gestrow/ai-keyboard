@@ -67,12 +67,12 @@ const fakeFs = (existing) => ({
 
 // --- Adapter registry --------------------------------------------------------
 
-test('adapters/index lists claude and gemini', () => {
-  assert.deepEqual(adaptersIndex.listProviders().sort(), ['claude', 'gemini']);
+test('adapters/index lists claude, codex, and gemini', () => {
+  assert.deepEqual(adaptersIndex.listProviders().sort(), ['claude', 'codex', 'gemini']);
 });
 
 test('adapters/index returns null for unknown provider', () => {
-  assert.equal(adaptersIndex.createAdapter('codex'), null);
+  assert.equal(adaptersIndex.createAdapter('nonexistent'), null);
 });
 
 // --- Claude adapter ---------------------------------------------------------

@@ -18,6 +18,15 @@ enum class Provider(
         storageKey = "google_gemini",
         defaultModel = "gemini-2.5-flash",
         apiKeyHelpUrl = "https://aistudio.google.com/apikey",
+    ),
+    // Phase 11: xAI Grok uses OpenAI-compatible /v1/chat/completions wire
+    // format; RemoteApiBackend.streamGrok reuses Phase 10's
+    // OpenAiCompatStreamParser for the SSE response.
+    XAI_GROK(
+        displayName = "xAI Grok",
+        storageKey = "xai_grok",
+        defaultModel = "grok-2-latest",
+        apiKeyHelpUrl = "https://console.x.ai",
     );
 
     companion object {

@@ -23,6 +23,8 @@
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">api.anthropic.com</domain>
         <domain includeSubdomains="true">generativelanguage.googleapis.com</domain>
+        <!-- Phase 11: xAI Grok is OpenAI-compatible, HTTPS-only. -->
+        <domain includeSubdomains="true">api.x.ai</domain>
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

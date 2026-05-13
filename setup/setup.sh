@@ -11,6 +11,10 @@ set -uo pipefail
 # "Known accepted corner cases" — Phase 12 rechecks before each release.
 CLAUDE_CODE_VERSION="2.1.112"
 GEMINI_CLI_VERSION="latest"
+# Codex pin: v0.43+ regressed on prctl(PR_SET_DUMPABLE) under Termux+proot
+# (openai/codex#6757). v0.42.0 is the documented last-known-working version;
+# Phase 12 release-prep re-evaluates against the current latest.
+CODEX_VERSION="0.42.0"
 NODE_REQUIRED_MAJOR=20
 
 TERMUX_PREFIX="/data/data/com.termux/files/usr"
@@ -22,7 +26,7 @@ SERVICE_LOG_DIR="$TERMUX_PREFIX/var/log/sv/ai-keyboard-bridge"
 TERMUX_PROPS="$HOME/.termux/termux.properties"
 BOOT_HOOK_DIR="$HOME/.termux/boot"
 
-SUPPORTED_PROVIDERS=(claude gemini)
+SUPPORTED_PROVIDERS=(claude gemini codex)
 SELECTED_PROVIDERS=()
 BRIDGE_SOURCE=""
 ASSUME_YES=0
@@ -116,14 +120,15 @@ usage() {
 Usage: bash setup.sh [OPTIONS]
 
   --bridge-source DIR  bridge/ tree to deploy (default: <script_dir>/../bridge)
-  --providers LIST     comma list (claude,gemini); skips interactive menu
-  --reauth PROVIDER    only run interactive OAuth for one provider (claude|gemini),
-                       skipping pkg install / bridge deploy / service registration.
-                       Used by the IME's TermuxOrchestrator (Phase 5b).
+  --providers LIST     comma list (claude,gemini,codex); skips interactive menu
+  --reauth PROVIDER    only run interactive OAuth for one provider
+                       (claude|gemini|codex), skipping pkg install / bridge
+                       deploy / service registration. Used by the IME's
+                       TermuxOrchestrator (Phase 5b).
   -y, --yes            skip the initial confirm; OAuth prompts still pause
   -h, --help           print this and exit
 
-Idempotent — re-run any time. Codex is Phase 11.
+Idempotent — re-run any time.
 EOF
 }
 
@@ -134,7 +139,7 @@ parse_args() {
             --bridge-source=*) BRIDGE_SOURCE="${1#*=}"; shift ;;
             --providers)       shift; [[ $# -gt 0 ]] || die "--providers requires a comma list"; parse_providers_arg "$1"; shift ;;
             --providers=*)     parse_providers_arg "${1#*=}"; shift ;;
-            --reauth)          shift; [[ $# -gt 0 ]] || die "--reauth requires a provider name (claude|gemini)"; REAUTH_PROVIDER="$1"; shift ;;
+            --reauth)          shift; [[ $# -gt 0 ]] || die "--reauth requires a provider name (claude|gemini|codex)"; REAUTH_PROVIDER="$1"; shift ;;
             --reauth=*)        REAUTH_PROVIDER="${1#*=}"; shift ;;
             -y|--yes)          ASSUME_YES=1; shift ;;
             -h|--help)         usage; exit 0 ;;
@@ -153,9 +158,8 @@ parse_providers_arg() {
         part=$(trim "$part")
         case "$part" in
             "") ;;
-            claude|gemini) SELECTED_PROVIDERS+=("$part") ;;
-            codex) die "Codex is Phase 11 — not part of 5a's setup script" ;;
-            *) die "Unknown provider: $part (supported: claude, gemini)" ;;
+            claude|gemini|codex) SELECTED_PROVIDERS+=("$part") ;;
+            *) die "Unknown provider: $part (supported: claude, gemini, codex)" ;;
         esac
     done
     [[ ${#SELECTED_PROVIDERS[@]} -gt 0 ]] || die "--providers list was empty"
@@ -172,10 +176,11 @@ print_banner() {
     cat <<EOF
 
 ${C_BOLD}AI Keyboard — Termux bridge setup${C_RESET}
-Pins: Claude Code v${CLAUDE_CODE_VERSION}, Gemini CLI ${GEMINI_CLI_VERSION}, Node ≥ ${NODE_REQUIRED_MAJOR}.
-Steps: termux.properties, pkg install, provider OAuth, bridge → ${BRIDGE_DEST},
-termux-services unit + optional Termux:Boot hook, /health probe.
-Safe to re-run.
+Pins: Claude Code v${CLAUDE_CODE_VERSION}, Gemini CLI ${GEMINI_CLI_VERSION},
+Codex v${CODEX_VERSION}, Node ≥ ${NODE_REQUIRED_MAJOR}.
+Steps: termux.properties, pkg install, DNS resolv.conf shim, provider OAuth,
+bridge → ${BRIDGE_DEST}, termux-services unit + optional Termux:Boot hook,
+/health probe. Safe to re-run.
 
 EOF
 }
@@ -192,7 +197,7 @@ confirm_proceed_or_exit() {
 }
 
 set_allow_external_apps() {
-    log_step "1/9 allow-external-apps in $TERMUX_PROPS"
+    log_step "1/11 allow-external-apps in $TERMUX_PROPS"
     if ensure_line_in_file "$TERMUX_PROPS" "allow-external-apps = true"; then
         if command -v termux-reload-settings >/dev/null 2>&1; then
             termux-reload-settings || log_warn "termux-reload-settings exited non-zero (continuing)"
@@ -204,7 +209,7 @@ set_allow_external_apps() {
 }
 
 install_termux_packages() {
-    log_step "2/9 Installing Termux packages"
+    log_step "2/11 Installing Termux packages"
     local pkgs=(nodejs git termux-api which ripgrep)
     local missing=()
     local p
@@ -238,7 +243,7 @@ install_termux_packages() {
 }
 
 select_providers() {
-    log_step "3/9 Selecting providers"
+    log_step "3/11 Selecting providers"
     if (( PROVIDERS_VIA_FLAG == 1 )); then
         log_skip "Providers set via --providers: ${SELECTED_PROVIDERS[*]}"
         return 0
@@ -246,29 +251,54 @@ select_providers() {
 
     cat <<EOF
 
-  1) Both Claude and Gemini  ${C_DIM}[recommended]${C_RESET}
+  1) Claude + Gemini only
   2) Claude only
   3) Gemini only
+  4) Codex only
+  5) All three: Claude + Gemini + Codex  ${C_DIM}[recommended]${C_RESET}
 
 EOF
     local choice
     while true; do
-        printf '%sChoose 1-3 (default 1): %s' "$C_BOLD" "$C_RESET"
+        printf '%sChoose 1-5 (default 5): %s' "$C_BOLD" "$C_RESET"
         if ! read -r choice; then
             choice=""
         fi
         case "$choice" in
-            ""|1) SELECTED_PROVIDERS=(claude gemini); break ;;
+            1)    SELECTED_PROVIDERS=(claude gemini); break ;;
             2)    SELECTED_PROVIDERS=(claude); break ;;
             3)    SELECTED_PROVIDERS=(gemini); break ;;
-            *)    log_warn "Invalid choice. Enter 1, 2, or 3." ;;
+            4)    SELECTED_PROVIDERS=(codex); break ;;
+            ""|5) SELECTED_PROVIDERS=(claude gemini codex); break ;;
+            *)    log_warn "Invalid choice. Enter 1, 2, 3, 4, or 5." ;;
         esac
     done
     log_ok "Will install: ${SELECTED_PROVIDERS[*]}"
 }
 
+# Termux ships without /etc/resolv.conf; Codex's Rust DNS resolver fails with
+# "Stream disconnected before completion" without one (openai/codex#11809).
+# Idempotent: if the file already exists and is non-empty, leave it alone so
+# we don't clobber the user's custom DNS config. Termux-wide fix that
+# benefits any future Rust-based CLI we ship.
+ensure_resolv_conf() {
+    log_step "4/11 DNS resolver shim ($TERMUX_PREFIX/etc/resolv.conf)"
+    local resolv="$TERMUX_PREFIX/etc/resolv.conf"
+    if [[ -f "$resolv" && -s "$resolv" ]]; then
+        log_skip "resolv.conf already present at $resolv"
+        return 0
+    fi
+    log_info "Writing nameserver entries (openai/codex#11809 — Termux has none by default)"
+    mkdir -p "$TERMUX_PREFIX/etc"
+    cat > "$resolv" <<'RESOLV_EOF'
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+RESOLV_EOF
+    log_ok "DNS shim written to $resolv"
+}
+
 install_claude_code_if_selected() {
-    log_step "4/9 Claude Code (v$CLAUDE_CODE_VERSION pinned)"
+    log_step "5/11 Claude Code (v$CLAUDE_CODE_VERSION pinned)"
     if ! provider_selected claude; then
         log_skip "Claude not selected"
         return 0
@@ -344,7 +374,7 @@ WRAPPER_EOF
 }
 
 install_gemini_cli_if_selected() {
-    log_step "5/9 Gemini CLI"
+    log_step "6/11 Gemini CLI"
     if ! provider_selected gemini; then
         log_skip "Gemini not selected"
         return 0
@@ -361,6 +391,33 @@ install_gemini_cli_if_selected() {
     log_ok "gemini installed: ${v:-<no version output>}"
 }
 
+install_codex_if_selected() {
+    log_step "7/11 Codex CLI (v$CODEX_VERSION pinned)"
+    if ! provider_selected codex; then
+        log_skip "Codex not selected"
+        return 0
+    fi
+    # Codex ships a thin JS shim + vendored Rust binary in the npm tarball;
+    # there is no postinstall script, no autoupdater. Plain npm install is
+    # durable (vs Claude Code's snapshot+wrapper dance).
+    log_info "npm i -g @openai/codex@${CODEX_VERSION}"
+    if ! npm i -g "@openai/codex@${CODEX_VERSION}"; then
+        die "npm install failed for @openai/codex@${CODEX_VERSION}. v0.42.0 is the documented last-known-working Termux target; if it's been pulled from npm, file an issue."
+    fi
+    if ! command -v codex >/dev/null 2>&1; then
+        die "codex binary not on PATH after install — npm misconfigured?"
+    fi
+    # Empirical Termux launch check — fail fast if the binary doesn't even
+    # exec on this device. Per openai/codex#6757, some Termux+proot setups
+    # crash inside prctl(PR_SET_DUMPABLE, 0); pinning to v0.42.0 sidesteps
+    # the known regression, but the long tail of Termux builds may still hit
+    # it. A clear early error beats a cryptic /chat failure later.
+    if ! codex --version >/dev/null 2>&1; then
+        die "codex --version failed. This Termux install may hit the prctl regression (openai/codex#6757). Try Termux outside proot, or pin to an older version (e.g., 0.41.0)."
+    fi
+    log_ok "codex installed: $(codex --version 2>&1 | head -1)"
+}
+
 run_oauth_for_claude() {
     run_one_oauth claude "$HOME/.claude/.credentials.json" \
         "Claude Code launches interactively. Sign in at claude.ai, then /exit (or Ctrl+C) to return."
@@ -371,13 +428,25 @@ run_oauth_for_gemini() {
         "Gemini CLI launches interactively. Sign in with Google, then /quit (or Ctrl+C) to return."
 }
 
+run_oauth_for_codex() {
+    # Codex's device-code OAuth prints a URL + one-time code; the user
+    # completes auth on any device. Better than Claude Code's loopback flow
+    # — no termux-open / browser handoff on the phone is needed.
+    run_one_oauth_cmd codex "$HOME/.codex/auth.json" \
+        "Codex prints a verification URL and one-time code. Open the URL on any device, paste the code, sign in with ChatGPT, then return here." \
+        login
+}
+
 run_oauth_flows() {
-    log_step "6/9 OAuth flows"
+    log_step "8/11 OAuth flows"
     if provider_selected claude; then
         run_oauth_for_claude
     fi
     if provider_selected gemini; then
         run_oauth_for_gemini
+    fi
+    if provider_selected codex; then
+        run_oauth_for_codex
     fi
 }
 
@@ -415,8 +484,44 @@ run_one_oauth() {
     fi
 }
 
+run_one_oauth_cmd() {
+    # Variant for CLIs that require an explicit subcommand to enter the login
+    # flow (e.g. `codex login` vs Claude/Gemini's bare `claude` / `gemini`).
+    # All other semantics match run_one_oauth.
+    local cli="$1" creds_path="$2" preamble="$3" subcommand="$4"
+    local short="${creds_path/#$HOME/\~}"
+    printf '\n%sProvider: %s%s\n%s\n\n' "$C_BOLD" "$cli" "$C_RESET" "$preamble"
+
+    local already=0
+    if [[ -f "$creds_path" ]]; then
+        already=1
+        log_info "Existing credentials at $short — auth already complete."
+    fi
+
+    printf '%sEnter to launch %s %s, s+Enter to skip: %s' "$C_BOLD" "$cli" "$subcommand" "$C_RESET"
+    local choice
+    if ! read -r choice; then choice="s"; fi
+    case "$choice" in
+        s|S|skip|SKIP)
+            if (( already == 1 )); then log_ok "Skipped (already authenticated)"
+            else log_warn "Skipped — bridge will report '$cli: not authenticated' until you re-run \`$cli $subcommand\`."
+            fi
+            return 0
+            ;;
+    esac
+
+    log_info "Launching: $cli $subcommand"
+    "$cli" "$subcommand" || log_warn "$cli $subcommand exited non-zero (Ctrl+C? — verifying auth state anyway)"
+
+    if [[ -f "$creds_path" ]]; then
+        log_ok "$cli authenticated (credentials at $short)"
+    else
+        log_warn "$cli $subcommand completed but no credentials file at $short — re-run and complete the device-code flow."
+    fi
+}
+
 deploy_bridge() {
-    log_step "7/9 Deploying bridge to $BRIDGE_DEST"
+    log_step "9/11 Deploying bridge to $BRIDGE_DEST"
 
     if [[ ! -d "$BRIDGE_SOURCE" ]]; then
         die "Bridge source directory not found: $BRIDGE_SOURCE
@@ -470,7 +575,7 @@ ensure_runsvdir_running() {
 }
 
 register_services() {
-    log_step "8/9 Registering termux-services unit"
+    log_step "10/11 Registering termux-services unit"
 
     if ! command -v sv >/dev/null 2>&1; then
         log_info "termux-services not installed — installing"
@@ -543,7 +648,7 @@ BOOT_EOF
 }
 
 start_bridge() {
-    log_step "9/9 Starting bridge and probing /health"
+    log_step "11/11 Starting bridge and probing /health"
 
     # `sv restart`, not `sv up`: redeploys must bounce the running node
     # process so the new on-disk server.js actually takes effect. On first
@@ -602,7 +707,8 @@ run_reauth_only() {
     case "$REAUTH_PROVIDER" in
         claude) run_oauth_for_claude ;;
         gemini) run_oauth_for_gemini ;;
-        *) die "Unknown provider: $REAUTH_PROVIDER. Valid: claude, gemini." 2 ;;
+        codex)  run_oauth_for_codex ;;
+        *) die "Unknown provider: $REAUTH_PROVIDER. Valid: claude, gemini, codex." 2 ;;
     esac
 }
 
@@ -618,8 +724,10 @@ main() {
     set_allow_external_apps
     install_termux_packages
     select_providers
+    ensure_resolv_conf
     install_claude_code_if_selected
     install_gemini_cli_if_selected
+    install_codex_if_selected
     run_oauth_flows
     deploy_bridge
     register_services

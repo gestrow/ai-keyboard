@@ -8,7 +8,9 @@ import android.content.res.AssetFileDescriptor
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
+import android.os.Binder
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import com.aikeyboard.app.latin.BuildConfig
 import java.io.File
 
@@ -111,7 +113,20 @@ class WhatsAppStickerContentProvider : ContentProvider() {
 
     private fun assertAllowedCaller() {
         val caller = callingPackage
+        // Phase 12 §6: debug-only diagnostic for the Phase 9b smoke failure
+        // (WhatsApp rejected a spec-compliant pack with a generic toast). Logs
+        // the caller package + uid + pid so we can determine whether WhatsApp's
+        // worker process reports a different package than {com.whatsapp,
+        // com.whatsapp.w4b}. PRIVACY: structural identifiers only; release
+        // builds emit zero logs because BuildConfig.DEBUG is false. No path,
+        // URI, or pack content is ever logged here.
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "assertAllowedCaller caller=$caller uid=${Binder.getCallingUid()} pid=${Binder.getCallingPid()}")
+        }
         if (caller == null || caller !in ALLOWED_CALLERS) {
+            if (BuildConfig.DEBUG) {
+                Log.w(TAG, "rejecting caller=$caller (not in ALLOWED_CALLERS)")
+            }
             throw SecurityException("Caller $caller not allowed")
         }
     }
@@ -138,7 +153,14 @@ class WhatsAppStickerContentProvider : ContentProvider() {
         private const val CODE_STICKERS_FOR_PACK = 3
         private const val CODE_STICKER_ASSET = 4
 
-        private val ALLOWED_CALLERS = setOf("com.whatsapp", "com.whatsapp.w4b")
+        private const val TAG = "WhatsAppStickers"
+
+        // Phase 12 §6: bumped from `private` to `internal` so the
+        // WhatsAppCallerPolicyTest contract pin can read this set directly
+        // without `@VisibleForTesting`. Test source set is in the same
+        // Gradle module, so `internal` reaches it; R8 still keeps the set
+        // module-private (no synthetic public getter).
+        internal val ALLOWED_CALLERS = setOf("com.whatsapp", "com.whatsapp.w4b")
 
         internal val METADATA_COLUMNS = arrayOf(
             "sticker_pack_identifier",

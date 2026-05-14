@@ -400,6 +400,9 @@ Before this list is appropriate, also verify the **"Known accepted corner cases"
 
 - **Claude Code Termux compatibility recheck (mandatory, every release).** Verify whether `@anthropic-ai/claude-code` latest stable (a) restored the `cli.js` JS entry point, or (b) ships an aarch64-Bionic native binary. If yes, update Phase 5a's `setup.sh` to use the latest stable; if no, confirm the pinned version (currently 2.1.112) is still the latest viable Termux target and document any edge cases. Reference issues: anthropics/claude-code#50270, #20778.
 
+  - **2026-05-13 Phase 12 §15.1 recheck:** `npm view @anthropic-ai/claude-code dist-tags` reports `{stable: 2.1.128, latest: 2.1.141, next: 2.1.141}`. `npm view @anthropic-ai/claude-code@latest bin` returns `{claude: 'bin/claude.exe'}` — single native binary entry, no `cli.js`. JS entry point has NOT returned; no aarch64-Bionic binary advertised. Pin remains `2.1.112` in `setup/setup.sh` for v0.1.0.
+  - **2026-05-13 Phase 12 §15.2 recheck:** `npm view @openai/codex dist-tags` reports `latest: 0.130.0` plus per-platform tags (`linux-arm64: 0.130.0-linux-arm64`, etc.) suggesting 0.130.0 ships precompiled native binaries per arch. The prctl regression openai/codex#6757 prevents 0.43+ from running cleanly on Termux without on-device verification; no Phase 12 on-device smoke against 0.130.0 was run, so `CODEX_VERSION="0.42.0"` stays in `setup/setup.sh` for v0.1.0. Bumping requires running the §16.10 smoke against the new version.
+
 
 
 **Done means:**

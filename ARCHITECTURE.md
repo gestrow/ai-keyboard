@@ -196,6 +196,6 @@ Splits applied after scrutiny: phases 5 and 7 are each split into two halves to 
 | 9 | Sticker engine — import + normalize to 512×512 WebP. **Two distinct insertion paths:** `COMMIT_CONTENT` via `InputContentInfoCompat` (Gboard-style, Telegram et al.) AND WhatsApp's separate sticker-pack `Intent` with `contents.json` manifest. Implement both. | 1–2 prompts |
 | 10 | `LocalLanBackend` for self-hosted models, expand `networkSecurityConfig.xml` with RFC1918 cleartext entries + user host validation | 1 prompt |
 | 11 | OpenAI Codex adapter in bridge + IME provider entry; defer Grok pending CLI availability | 1 prompt |
-| 12 | Polish: onboarding wizard, error states, health diagnostics, README, screenshots, F-Droid metadata, signing key generation, reproducible-build verification, signed release | 1 prompt |
+| 12 | Polish: onboarding wizard, error states, health diagnostics, README, screenshots, F-Droid metadata, signing key generation, reproducible-build verification, signed release. **Landed 2026-05-13 (v0.1.0).** See `PHASE_12_SUMMARY.md`. | 1 prompt |
 
 Each phase is its own context window. Start by reading this file and the previous phase's `PHASE_N_SUMMARY.md`.

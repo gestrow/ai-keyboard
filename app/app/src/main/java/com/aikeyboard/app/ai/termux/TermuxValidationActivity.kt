@@ -195,12 +195,10 @@ class TermuxValidationActivity : ComponentActivity() {
         try {
             // Android 12+ blocks startService on background apps; RunCommandService
             // is declared as a foreground service and Termux is usually idle, so
-            // startForegroundService is the path that works across versions.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            // startForegroundService is the only path that works on our minSdk=29
+            // floor (>= API 26 = O, so the prior SDK_INT guard was always true and
+            // the startService else branch was dead code — Phase 12 §7).
+            startForegroundService(intent)
             appendDetail("Intent dispatched to com.termux/.app.RunCommandService\n")
         } catch (e: SecurityException) {
             statusView.text = "❌ SecurityException — is com.termux.permission.RUN_COMMAND granted?"

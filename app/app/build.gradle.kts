@@ -15,8 +15,15 @@ android {
         applicationId = "com.aikeyboard.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 3901
-        versionName = "3.9"
+        // Phase 12 §8.2: semver reset for the AI Keyboard fork. HeliBoard's
+        // upstream sequence (3901 / "3.9") is intentionally abandoned;
+        // com.aikeyboard.app is a fresh package id in F-Droid's index.
+        // versionCode increments monotonically from 1 onwards.
+        // CAVEAT for early testers: bumping versionCode from 3901 → 1 is a
+        // downgrade from Android's perspective; uninstall any prior
+        // dev-build before installing v0.1.0. See README install section.
+        versionCode = 1
+        versionName = "0.1.0"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))

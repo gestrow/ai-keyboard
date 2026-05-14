@@ -7,10 +7,27 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
     android:orientation="vertical" >
+
+    <!-- Phase 12 §5: in-keyboard error banner. Sits ABOVE the command row so
+         errors render in front of the keyboard surface rather than behind it
+         (Toast.LENGTH_SHORT defaulted to Gravity.BOTTOM with a small y-offset,
+         which left toasts hidden behind the keyboard for AI rewrite + Read &
+         Respond errors). Mirrors StickerPickerView's chip pattern. -->
+    <TextView
+        android:id="@+id/ai_command_error_chip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:gravity="center"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:text="Error message"
+        tools:visibility="visible" />
 
     <com.aikeyboard.app.ai.commandrow.CommandRowView
         android:id="@+id/ai_command_row"

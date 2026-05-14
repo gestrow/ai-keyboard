@@ -10,8 +10,11 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.widget.PopupMenu
-import android.widget.Toast
+import android.widget.TextView
+import androidx.annotation.StringRes
 import androidx.core.view.isVisible
+import com.aikeyboard.app.latin.common.ColorType
+import com.aikeyboard.app.latin.settings.Settings as KeyboardSettings
 import com.aikeyboard.app.ai.a11y.A11yProxy
 import com.aikeyboard.app.ai.a11y.ReadRespondConsentActivity
 import com.aikeyboard.app.ai.a11y.ReadRespondPromptBuilder
@@ -63,6 +66,13 @@ class CommandRowController @JvmOverloads constructor(
     private var keyboardWrapper: View? = null
     private val stickerStorage: StickerStorage = StickerStorage.getInstance(ime)
     private var cachedEditorInfo: EditorInfo? = null
+
+    // Phase 12 §5: in-keyboard error banner. Hosts the chip set by LatinIME from
+    // main_keyboard_frame.xml; null until setErrorChip() runs. The picker has its
+    // own error chip (StickerPickerView.showError); this one covers all other
+    // keyboard-surface errors (AI rewrite / Read & Respond / commit fallbacks).
+    private var errorChip: TextView? = null
+    private val errorDismiss = Runnable { errorChip?.visibility = View.GONE }
 
     init {
         view.listener = this
@@ -384,6 +394,21 @@ class CommandRowController @JvmOverloads constructor(
     fun dispose() {
         scope.cancel()
         streamJob = null
+        errorChip?.removeCallbacks(errorDismiss)
+    }
+
+    /**
+     * Phase 12 §5: register the error-chip TextView hosted in
+     * `main_keyboard_frame.xml` so `toast(resId)` renders ABOVE the command
+     * row instead of behind it as a Toast. Idempotent; safe to re-invoke when
+     * LatinIME re-inflates the input view.
+     */
+    fun setErrorChip(chip: TextView) {
+        errorChip?.removeCallbacks(errorDismiss)
+        errorChip = chip
+        val colors = KeyboardSettings.getValues().mColors
+        chip.setBackgroundColor(colors.get(ColorType.ACTION_KEY_BACKGROUND))
+        chip.setTextColor(colors.get(ColorType.KEY_TEXT))
     }
 
     private fun launchSettings() {
@@ -392,8 +417,20 @@ class CommandRowController @JvmOverloads constructor(
         ime.startActivity(intent)
     }
 
-    private fun toast(resId: Int) {
-        Toast.makeText(ime, resId, Toast.LENGTH_SHORT).show()
+    /**
+     * Phase 12 §5: surfaces a localized error via the in-keyboard chip mirror
+     * of `StickerPickerView.showError`. The chip is set up by `setErrorChip`
+     * via `main_keyboard_frame.xml`; if the host view tree didn't inflate the
+     * chip for any reason, the call is a silent no-op rather than a crash —
+     * the error path then disappears, but the rewrite/Read&Respond flow stays
+     * usable (the preview-strip surfaces structural errors independently).
+     */
+    private fun toast(@StringRes resId: Int) {
+        val chip = errorChip ?: return
+        chip.removeCallbacks(errorDismiss)
+        chip.setText(resId)
+        chip.visibility = View.VISIBLE
+        chip.postDelayed(errorDismiss, ERROR_DURATION_MS)
     }
 
     companion object {
@@ -401,5 +438,7 @@ class CommandRowController @JvmOverloads constructor(
         // Cap text we ship to the LLM. Most apps' fields are far smaller; this keeps a runaway
         // text field from blowing the request budget.
         private const val MAX_INPUT_CHARS = 8_000
+        // Phase 12 §5: matches StickerPickerView.ERROR_DURATION_MS for visual consistency.
+        private const val ERROR_DURATION_MS = 2_500L
     }
 }

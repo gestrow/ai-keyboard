@@ -769,6 +769,11 @@ public class LatinIME extends InputMethodService implements
         // tear down its coroutine scope so any orphaned in-flight stream is cancelled.
         if (mCommandRowController != null) mCommandRowController.dispose();
         mCommandRowController = new CommandRowController(this, row, preview, SecureStorage.Companion.getInstance(this));
+        // Phase 12 §5: register the in-keyboard error chip (above command row).
+        final android.widget.TextView errorChip = view.findViewById(R.id.ai_command_error_chip);
+        if (errorChip != null) {
+            mCommandRowController.setErrorChip(errorChip);
+        }
         final StickerPickerView stickerPicker = view.findViewById(R.id.ai_sticker_picker);
         if (stickerPicker != null) {
             mCommandRowController.setStickerPicker(stickerPicker);

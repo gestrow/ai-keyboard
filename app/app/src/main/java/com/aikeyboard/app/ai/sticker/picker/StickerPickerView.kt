@@ -85,10 +85,10 @@ class StickerPickerView @JvmOverloads constructor(
     }
 
     /**
-     * Phase 9b carry-over #1 fix: in-picker error banner. Replaces the
-     * `Toast.makeText(ime, ...).show()` path from CommandRowController, which
-     * rendered toasts behind the picker (Gravity.BOTTOM offset is too small to
-     * clear a ~280dp picker).
+     * In-picker error banner. Mirrors the keyboard-surface chip in
+     * `CommandRowController.setErrorChip` (Phase 12 §5) for picker-only
+     * commit errors (`NO_CONNECTION` / `UNSUPPORTED_FIELD` / `FAILED` /
+     * `missing_file`). Pattern unified across the IME surface in Phase 12.
      */
     fun showError(@StringRes stringRes: Int) {
         errorChip.removeCallbacks(errorDismiss)

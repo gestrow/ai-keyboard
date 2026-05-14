@@ -1,0 +1,77 @@
+AI Keyboard
+Copyright (C) 2026 AI Keyboard contributors
+
+This product includes software from the following projects:
+
+HeliBoard
+  https://github.com/Helium314/HeliBoard
+  GPL-3.0-only
+  Forked from the keyboard surface, autocorrect, gesture typing, layouts.
+  The vast majority of the app/ Java/Kotlin source originates from HeliBoard.
+
+AOSP LatinIME
+  https://android.googlesource.com/platform/packages/inputmethods/LatinIME/
+  Apache-2.0
+  Original Android keyboard implementation that HeliBoard forked from.
+
+Jetpack Compose (androidx.compose.*, androidx.activity:activity-compose,
+androidx.navigation:navigation-compose, androidx.lifecycle:*,
+androidx.core:core-ktx, androidx.recyclerview:recyclerview,
+androidx.autofill:autofill, androidx.viewpager2:viewpager2,
+androidx.security:security-crypto)
+  https://developer.android.com/jetpack
+  Apache-2.0
+
+Ktor (io.ktor:ktor-client-okhttp, ktor-client-content-negotiation,
+ktor-serialization-kotlinx-json)
+  https://ktor.io
+  Apache-2.0
+
+OkHttp (transitive via Ktor)
+  https://square.github.io/okhttp/
+  Apache-2.0
+
+kotlinx.serialization, kotlinx.coroutines (transitive)
+  https://github.com/Kotlin/kotlinx.serialization
+  https://github.com/Kotlin/kotlinx.coroutines
+  Apache-2.0
+
+Google Tink (com.google.crypto.tink:tink-android)
+  https://github.com/google/tink
+  Apache-2.0
+
+skydoves/colorpicker-compose
+  https://github.com/skydoves/colorpicker-compose
+  Apache-2.0
+
+sh.calvin.reorderable
+  https://github.com/Calvin-LL/Reorderable
+  Apache-2.0
+
+Android desugar_jdk_libs (com.android.tools:desugar_jdk_libs)
+  https://developer.android.com/studio/write/java8-support
+  Apache-2.0
+
+Fastify (bridge/, runtime dep only)
+  https://fastify.dev
+  MIT
+
+@anthropic-ai/claude-code (Termux bridge integration only)
+  https://github.com/anthropics/claude-code
+  Anthropic Commercial Terms
+  Invoked as an external CLI; not bundled. The bridge spawns the
+  user-installed CLI as a subprocess.
+
+@google/gemini-cli (Termux bridge integration only)
+  https://github.com/google-gemini/gemini-cli
+  Apache-2.0
+  Invoked as an external CLI; not bundled.
+
+@openai/codex (Termux bridge integration only)
+  https://github.com/openai/codex
+  Apache-2.0
+  Invoked as an external CLI; not bundled.
+
+---
+
+See LICENSE for the full GPL-3.0-only text governing this project's source.

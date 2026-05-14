@@ -1,0 +1,7 @@
+First release.
+
+Forked from HeliBoard 3.9. Adds:
+- AI rewrite via Anthropic, Google, xAI, local LAN, or Termux-hosted CLIs
+- Read & Respond screen context (opt-in)
+- Sticker engine with WhatsApp pack support
+- Three configurable backends; API keys stay on device

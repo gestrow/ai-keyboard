@@ -1,0 +1,27 @@
+AI Keyboard is a privacy-respecting Android keyboard with personality-driven AI assistance, optional screen-context awareness, and sticker creation.
+
+Features
+- Forked from HeliBoard: full autocorrect, gesture typing, multi-language, suggestion strip
+- AI rewrite: highlight or capture text, ask AI to refine, replace inline
+- Read & Respond: optional screen-context summarization for thoughtful replies (requires AccessibilityService permission, off by default)
+- Sticker engine: import any image, normalize to WhatsApp-compatible format, send via COMMIT_CONTENT or Add-to-WhatsApp
+- Three backends, your choice:
+  - Remote API keys: Anthropic Claude, Google Gemini, xAI Grok (BYOK, direct HTTPS, no proxy)
+  - Local LAN: point at your own Ollama / vLLM / LM Studio server
+  - Termux bridge: run Claude Code, Codex, or Gemini CLI locally on the same device
+
+Privacy
+- No telemetry, no analytics, no ads
+- API keys stored in Android Keystore (Tink AEAD)
+- All AI requests go directly to your selected backend; no intermediate server
+- Always-On Read & Respond defaults OFF on every restart; you must re-enable explicitly
+- Network security config restricts cleartext HTTP to LAN backends only
+- Source code: GPL-3.0, see GitHub link below
+
+Setup
+1. Enable AI Keyboard under Settings → System → Languages & input → On-screen keyboard
+2. Open AI Keyboard's settings → Backends; pick a backend and configure
+3. (Optional) Pair with personas for tone-tuned rewrites
+
+Forked from HeliBoard <https://github.com/Helium314/HeliBoard>.
+Bug reports, feature requests, code: https://github.com/aikeyboard/ai-keyboard

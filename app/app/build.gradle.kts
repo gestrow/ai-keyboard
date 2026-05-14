@@ -1,4 +1,5 @@
 import com.android.build.api.variant.ApplicationVariant
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -23,12 +24,51 @@ android {
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
 
+    // Phase 12 §8.1: release signing config. Reads keystore.path,
+    // keystore.password, key.alias, key.password from `keystore.properties`
+    // at repo root (gitignored — never commit; see BUILD.md). If the
+    // properties file is absent and `-PforceReleaseSigning` was passed
+    // (CI / release contexts) the build hard-fails; otherwise it falls
+    // back to debug signing with a Gradle warning so local development
+    // works without keystore setup.
+    signingConfigs {
+        create("release") {
+            val keystorePropsFile = rootProject.file("keystore.properties")
+            val forceReleaseSigning = project.hasProperty("forceReleaseSigning")
+            if (keystorePropsFile.exists()) {
+                val props = Properties().apply { keystorePropsFile.inputStream().use { load(it) } }
+                storeFile = rootProject.file(props.getProperty("keystore.path"))
+                storePassword = props.getProperty("keystore.password")
+                keyAlias = props.getProperty("key.alias")
+                keyPassword = props.getProperty("key.password")
+            } else if (forceReleaseSigning) {
+                throw GradleException(
+                    "keystore.properties not found and -PforceReleaseSigning was passed. " +
+                        "Release signing is required in this context. See BUILD.md."
+                )
+            } else {
+                logger.warn(
+                    "keystore.properties not found; release builds will be debug-signed. " +
+                        "Pass -PforceReleaseSigning in CI/release contexts to hard-fail instead. " +
+                        "See BUILD.md for setup instructions."
+                )
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = false
             isDebuggable = false
             isJniDebuggable = false
+            // Phase 12 §8.1: signed with the release keystore if
+            // keystore.properties exists at repo root; else debug-signed
+            // (with the Gradle warning logged above).
+            signingConfig = if (rootProject.file("keystore.properties").exists())
+                signingConfigs.getByName("release")
+            else
+                signingConfigs.getByName("debug")
         }
         create("nouserlib") { // same as release, but does not allow the user to provide a library
             isMinifyEnabled = true

@@ -21,3 +21,9 @@ app/app/release/
 
 # Local scratch (screenshots, ad-hoc debug captures)
 temp/
+
+# Phase 12 §8: release signing — never commit
+keystore.properties
+release-keys/
+*.jks
+*.keystore

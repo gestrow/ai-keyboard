@@ -273,4 +273,10 @@
     <string name="ai_settings_locallan_public_ip_body">The address you entered is a public IP. Cleartext traffic to public hosts is a privacy risk — your prompts and the model\'s replies are sent unencrypted across the internet. Only continue if you control the destination network.</string>
     <string name="ai_settings_locallan_save_anyway">Save anyway</string>
 
+    <!-- Phase 12 §10: health diagnostics screen. -->
+    <string name="ai_health_diagnostics">Run diagnostics</string>
+    <string name="ai_health_diagnostics_title">Health diagnostics</string>
+    <string name="ai_health_diagnostics_copy">Copy report</string>
+    <string name="ai_health_diagnostics_privacy_note">Report contains only configuration state (IME / a11y / backend selection). No API keys, no URLs, no prompts.</string>
+
 </resources>

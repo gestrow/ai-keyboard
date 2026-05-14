@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +47,7 @@ fun BackendsScreen(
     onEditProvider: (Provider) -> Unit,
     onOpenTermuxBridge: () -> Unit,
     onOpenLocalLanEdit: () -> Unit,
+    onOpenHealth: () -> Unit,
 ) {
     val context = LocalContext.current
     val storage = remember { SecureStorage.getInstance(context) }
@@ -228,6 +230,16 @@ fun BackendsScreen(
                 },
             )
             HorizontalDivider()
+
+            // Phase 12 §10: opens the health diagnostics screen. Reachable via
+            // the existing BackendsScreen surface because most reachability
+            // problems users hit are backend-shaped.
+            TextButton(
+                onClick = onOpenHealth,
+                modifier = Modifier.padding(start = 8.dp, top = 16.dp),
+            ) {
+                Text(stringResource(R.string.ai_health_diagnostics))
+            }
         }
     }
 }

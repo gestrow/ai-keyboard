@@ -105,3 +105,12 @@
     public <init>(...);
     public *** rewrite(...);
 }
+
+# Phase 12 §10.6: keep HealthDiagnosticChecker observable in dex. Single
+# call site in HealthDiagnosticsRoute, prior precedent showed R8 will
+# inline single-call-site suspend fun bodies into composable lambdas
+# otherwise — and the health screen then renders all rows as FAIL because
+# the checker was inlined away from the dex.
+-keep class com.aikeyboard.app.ai.ui.health.HealthDiagnosticChecker {
+    public *** runAll(...);
+}

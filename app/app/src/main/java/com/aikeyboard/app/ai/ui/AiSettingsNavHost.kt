@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.aikeyboard.app.ai.storage.SecureStorage
 import com.aikeyboard.app.ai.ui.alwayson.AlwaysOnRoute
+import com.aikeyboard.app.ai.ui.health.HealthDiagnosticsRoute
 import com.aikeyboard.app.ai.ui.locallan.LocalLanEditRoute
 import com.aikeyboard.app.ai.ui.stickers.StickerPackEditRoute
 import com.aikeyboard.app.ai.ui.stickers.StickerPacksRoute
@@ -25,6 +26,7 @@ object AiSettingsRoutes {
     const val BACKENDS_TERMUX = "backends/termux"
     const val BACKENDS_LOCALLAN_EDIT = "backends/locallan/edit"
     const val ALWAYS_ON = "always-on"
+    const val HEALTH = "health"
     const val STICKERS_LIST = "stickers/list"
     const val STICKERS_EDIT = "stickers/edit"
     const val ARG_PERSONA_ID = "personaId"
@@ -91,7 +93,11 @@ fun AiSettingsNavHost(
                 },
                 onOpenTermuxBridge = { nav.navigate(AiSettingsRoutes.BACKENDS_TERMUX) },
                 onOpenLocalLanEdit = { nav.navigate(AiSettingsRoutes.BACKENDS_LOCALLAN_EDIT) },
+                onOpenHealth = { nav.navigate(AiSettingsRoutes.HEALTH) },
             )
+        }
+        composable(AiSettingsRoutes.HEALTH) {
+            HealthDiagnosticsRoute(onBack = { nav.popBackStack() })
         }
         composable(AiSettingsRoutes.BACKENDS_TERMUX) {
             TermuxBridgeRoute(onBack = { nav.popBackStack() })

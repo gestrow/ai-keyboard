@@ -38,16 +38,34 @@ android {
     // (CI / release contexts) the build hard-fails; otherwise it falls
     // back to debug signing with a Gradle warning so local development
     // works without keystore setup.
+    // BUILD.md instructs maintainers to drop keystore.properties at the git
+    // repo root. rootProject.file(...) resolves relative to the Gradle root
+    // (app/, where settings.gradle lives), which is one level inside the
+    // repo — so we step up to the repo root explicitly. Hoisted to android{}
+    // scope because both signingConfigs (which loads the keystore) and
+    // buildTypes (which selects release-vs-debug signing) need to check the
+    // same path; previously the latter still used the wrong rootProject.file
+    // path and silently fell back to debug signing even when keystore.properties
+    // was present.
+    val repoRoot = rootProject.projectDir.parentFile!!
+    val keystorePropsFile = repoRoot.resolve("keystore.properties")
+
     signingConfigs {
         create("release") {
-            val keystorePropsFile = rootProject.file("keystore.properties")
             val forceReleaseSigning = project.hasProperty("forceReleaseSigning")
             if (keystorePropsFile.exists()) {
                 val props = Properties().apply { keystorePropsFile.inputStream().use { load(it) } }
-                storeFile = rootProject.file(props.getProperty("keystore.path"))
+                storeFile = repoRoot.resolve(props.getProperty("keystore.path"))
                 storePassword = props.getProperty("keystore.password")
                 keyAlias = props.getProperty("key.alias")
                 keyPassword = props.getProperty("key.password")
+                // Belt + suspenders: AGP 8.x defaults to v2+v3, but be explicit
+                // so a future AGP minor doesn't silently flip a scheme off. v1
+                // (legacy JAR signing) stays off — minSdk=29 doesn't need it.
+                // v4 is for Play streaming installs, not relevant to F-Droid.
+                enableV1Signing = false
+                enableV2Signing = true
+                enableV3Signing = true
             } else if (forceReleaseSigning) {
                 throw GradleException(
                     "keystore.properties not found and -PforceReleaseSigning was passed. " +
@@ -72,7 +90,7 @@ android {
             // Phase 12 §8.1: signed with the release keystore if
             // keystore.properties exists at repo root; else debug-signed
             // (with the Gradle warning logged above).
-            signingConfig = if (rootProject.file("keystore.properties").exists())
+            signingConfig = if (keystorePropsFile.exists())
                 signingConfigs.getByName("release")
             else
                 signingConfigs.getByName("debug")

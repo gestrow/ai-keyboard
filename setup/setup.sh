@@ -6,6 +6,16 @@
 
 set -uo pipefail
 
+# `curl … | bash` consumes stdin via the pipe, so every `read` later in the
+# script would fail with "stdin closed before confirmation". Detect that case
+# and re-open stdin from /dev/tty so confirm prompts + interactive menus +
+# OAuth prompts still work. Falls through silently in non-tty contexts (CI,
+# `bash setup.sh < /dev/null`), where --yes / --providers flags are the
+# appropriate path.
+if [ ! -t 0 ] && [ -r /dev/tty ]; then
+    exec </dev/tty
+fi
+
 # Pinned versions. The Claude Code pin is load-bearing: ≥ 2.1.113 ships
 # glibc-only and breaks on Termux's Bionic libc. See PHASE_REVIEW.md
 # "Known accepted corner cases" — Phase 12 rechecks before each release.

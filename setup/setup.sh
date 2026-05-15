@@ -21,14 +21,23 @@ TERMUX_PREFIX="/data/data/com.termux/files/usr"
 HOME_BIN="$HOME/bin"
 CLAUDE_SNAPSHOT="$HOME/claude-code-pinned"
 BRIDGE_DEST="$HOME/ai-keyboard-bridge"
+BRIDGE_CHECKOUT_CACHE="$HOME/.cache/aikeyboard-bridge-checkout"
 SERVICE_DIR="$TERMUX_PREFIX/var/service/ai-keyboard-bridge"
 SERVICE_LOG_DIR="$TERMUX_PREFIX/var/log/sv/ai-keyboard-bridge"
 TERMUX_PROPS="$HOME/.termux/termux.properties"
 BOOT_HOOK_DIR="$HOME/.termux/boot"
 
+# Fallback git source when no local bridge/ tree is available (e.g. running
+# setup.sh standalone via `curl … | bash` in Termux). Overridable via
+# --bridge-source-git URL[#REF]. REF defaults to DEFAULT_BRIDGE_GIT_REF.
+DEFAULT_BRIDGE_GIT_URL="https://github.com/gestrow/ai-keyboard.git"
+DEFAULT_BRIDGE_GIT_REF="main"
+
 SUPPORTED_PROVIDERS=(claude gemini codex)
 SELECTED_PROVIDERS=()
 BRIDGE_SOURCE=""
+BRIDGE_SOURCE_GIT=""
+BRIDGE_SOURCE_GIT_REF=""
 ASSUME_YES=0
 PROVIDERS_VIA_FLAG=0
 REAUTH_PROVIDER=""
@@ -120,6 +129,12 @@ usage() {
 Usage: bash setup.sh [OPTIONS]
 
   --bridge-source DIR  bridge/ tree to deploy (default: <script_dir>/../bridge)
+  --bridge-source-git URL[#REF]
+                       clone the bridge from a git URL when no local
+                       --bridge-source exists. Default URL:
+                       https://github.com/gestrow/ai-keyboard.git
+                       Default REF: main. Use this for standalone Termux
+                       installs (`curl …/setup.sh | bash`).
   --providers LIST     comma list (claude,gemini,codex); skips interactive menu
   --reauth PROVIDER    only run interactive OAuth for one provider
                        (claude|gemini|codex), skipping pkg install / bridge
@@ -137,6 +152,8 @@ parse_args() {
         case "$1" in
             --bridge-source)   shift; [[ $# -gt 0 ]] || die "--bridge-source requires a path"; BRIDGE_SOURCE="$1"; shift ;;
             --bridge-source=*) BRIDGE_SOURCE="${1#*=}"; shift ;;
+            --bridge-source-git)   shift; [[ $# -gt 0 ]] || die "--bridge-source-git requires URL[#REF]"; BRIDGE_SOURCE_GIT="$1"; shift ;;
+            --bridge-source-git=*) BRIDGE_SOURCE_GIT="${1#*=}"; shift ;;
             --providers)       shift; [[ $# -gt 0 ]] || die "--providers requires a comma list"; parse_providers_arg "$1"; shift ;;
             --providers=*)     parse_providers_arg "${1#*=}"; shift ;;
             --reauth)          shift; [[ $# -gt 0 ]] || die "--reauth requires a provider name (claude|gemini|codex)"; REAUTH_PROVIDER="$1"; shift ;;
@@ -147,6 +164,15 @@ parse_args() {
         esac
     done
     [[ -n "$BRIDGE_SOURCE" ]] || BRIDGE_SOURCE="$DEFAULT_BRIDGE_SOURCE"
+    # Split BRIDGE_SOURCE_GIT into url + ref (url#ref form).
+    if [[ -n "$BRIDGE_SOURCE_GIT" ]]; then
+        if [[ "$BRIDGE_SOURCE_GIT" == *"#"* ]]; then
+            BRIDGE_SOURCE_GIT_REF="${BRIDGE_SOURCE_GIT##*#}"
+            BRIDGE_SOURCE_GIT="${BRIDGE_SOURCE_GIT%%#*}"
+        else
+            BRIDGE_SOURCE_GIT_REF="$DEFAULT_BRIDGE_GIT_REF"
+        fi
+    fi
 }
 
 parse_providers_arg() {
@@ -524,11 +550,32 @@ deploy_bridge() {
     log_step "9/11 Deploying bridge to $BRIDGE_DEST"
 
     if [[ ! -d "$BRIDGE_SOURCE" ]]; then
-        die "Bridge source directory not found: $BRIDGE_SOURCE
-Pass --bridge-source <dir> pointing at a checked-out bridge/ tree, or push it
-to the device first:
-    adb push bridge /data/local/tmp/
-    bash setup.sh --bridge-source /data/local/tmp/bridge"
+        # No local bridge/ tree — clone from a git URL. Defaults to the public
+        # gestrow/ai-keyboard repo; --bridge-source-git overrides.
+        local git_url="$BRIDGE_SOURCE_GIT" git_ref="$BRIDGE_SOURCE_GIT_REF"
+        if [[ -z "$git_url" ]]; then
+            git_url="$DEFAULT_BRIDGE_GIT_URL"
+            git_ref="$DEFAULT_BRIDGE_GIT_REF"
+        fi
+        log_info "No local bridge tree at $BRIDGE_SOURCE"
+        log_info "Cloning $git_url (ref: $git_ref) → $BRIDGE_CHECKOUT_CACHE"
+        command -v git >/dev/null 2>&1 \
+            || die "git not on PATH — the pkg-install step should have provided it. Run \`pkg install git\` and retry."
+        rm -rf "$BRIDGE_CHECKOUT_CACHE"
+        mkdir -p "$(dirname "$BRIDGE_CHECKOUT_CACHE")"
+        # First attempt: shallow clone of the named ref (works for branches + tags).
+        if ! git clone --depth 1 --branch "$git_ref" "$git_url" "$BRIDGE_CHECKOUT_CACHE" >/dev/null 2>&1; then
+            # Fallback for SHA refs: full clone + checkout.
+            rm -rf "$BRIDGE_CHECKOUT_CACHE"
+            git clone "$git_url" "$BRIDGE_CHECKOUT_CACHE" >/dev/null 2>&1 \
+                || die "git clone of $git_url failed. Check network/URL and retry, or pass --bridge-source DIR with a local tree."
+            ( cd "$BRIDGE_CHECKOUT_CACHE" && git checkout "$git_ref" >/dev/null 2>&1 ) \
+                || die "git checkout $git_ref failed in cloned repo."
+        fi
+        BRIDGE_SOURCE="$BRIDGE_CHECKOUT_CACHE/bridge"
+        [[ -d "$BRIDGE_SOURCE" ]] \
+            || die "Cloned repo does not contain a bridge/ subdirectory at $BRIDGE_SOURCE — wrong --bridge-source-git URL?"
+        log_ok "Bridge source cloned to $BRIDGE_SOURCE"
     fi
     if [[ ! -f "$BRIDGE_SOURCE/server.js" || ! -f "$BRIDGE_SOURCE/package.json" ]]; then
         die "$BRIDGE_SOURCE doesn't look like a bridge dir (missing server.js or package.json)"

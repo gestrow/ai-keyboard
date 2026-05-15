@@ -24,4 +24,4 @@ Setup
 3. (Optional) Pair with personas for tone-tuned rewrites
 
 Forked from HeliBoard <https://github.com/Helium314/HeliBoard>.
-Bug reports, feature requests, code: https://github.com/aikeyboard/ai-keyboard
+Bug reports, feature requests, code: https://github.com/gestrow/ai-keyboard

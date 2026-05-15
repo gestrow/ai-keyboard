@@ -2,6 +2,7 @@
 
 AI Keyboard is a privacy-respecting Android keyboard with personality-driven AI assistance, optional screen-context awareness, and sticker creation. Forked from [HeliBoard](https://github.com/Helium314/HeliBoard).
 
+[![release](https://img.shields.io/github/v/release/gestrow/ai-keyboard?include_prereleases)](https://github.com/gestrow/ai-keyboard/releases)
 [![license](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
 ## Features
@@ -18,7 +19,7 @@ AI Keyboard is a privacy-respecting Android keyboard with personality-driven AI 
 ## Install
 
 - **F-Droid**: <_index entry pending v0.1.0 publication_>
-- **GitHub Releases**: signed APKs attached to each tagged release.
+- **GitHub Releases**: signed APKs at https://github.com/gestrow/ai-keyboard/releases
 - **Build from source**: see [BUILD.md](BUILD.md).
 
 Two flavors ship:
@@ -42,6 +43,17 @@ Two flavors ship:
 **Local LAN** is for users running their own model locally (Ollama, vLLM, LM Studio, etc.). Enter the base URL + model name; cleartext is allowed only for RFC1918 ranges and the loopback hosts. Public IPs trigger a warn-before-save dialog.
 
 **Termux bridge** is the most private option: install Termux from F-Droid, run `setup.sh` once, and the bridge spawns Claude Code / Codex / Gemini CLI subprocesses locally. OAuth tokens stay in each CLI's own config dir inside Termux's sandbox.
+
+Standalone Termux install (no checkout needed):
+
+```bash
+pkg install -y git curl
+curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh | bash
+```
+
+(Direct GitHub-raw alternative: `curl -fsSL https://raw.githubusercontent.com/gestrow/ai-keyboard/main/setup/setup.sh | bash`.)
+
+`setup.sh` auto-clones the bridge from `https://github.com/gestrow/ai-keyboard.git` when no `--bridge-source` is provided. Override the source via `--bridge-source-git URL[#REF]`.
 
 ## Setup
 
@@ -82,6 +94,10 @@ The codebase is organized as three deliverables:
 - Six Robolectric SDK-36 tests fail at compile time. Documented in [PHASE_REVIEW.md](PHASE_REVIEW.md); waiting on Robolectric upstream.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full release notes.
+
+## Bug reports / contributing
+
+GitHub Issues: https://github.com/gestrow/ai-keyboard/issues
 
 ## License
 

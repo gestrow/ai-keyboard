@@ -5,6 +5,35 @@ All notable changes to AI Keyboard, the privacy-respecting Android IME forked fr
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] — 2026-05-15
+
+Patch release. Fixes two install-flow paper cuts found post-v0.1.0 and lands the F-Droid metadata images that were placeholder-deferred at v0.1.0.
+
+### Fixed
+
+- **Termux setup wizard URL** (`TermuxSetupWizardScreen.kt`): the bootstrap command shown in the in-app wizard pointed at a placeholder GitHub org (`aikeyboard/ai-keyboard`) that 404s. Now points at `https://bansheebets.com/ai-keyboard/setup.sh`, matching README and the public landing page.
+- **`curl … | bash` stdin handling** (`setup/setup.sh`): the one-paste install command recommended by README and bansheebets.com would die at the first `Proceed? [y/N]` prompt because `read` couldn't get input — stdin was consumed by the curl pipe. Setup script now re-opens stdin from `/dev/tty` when piped, so confirm prompts + provider menu + per-CLI OAuth flows work normally. Non-TTY contexts (CI, headless) fall through silently; `--yes` / `--providers` flags remain the correct path there.
+- **Wizard and site/README now show the same one-liner install command**: `curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh | bash`.
+
+### Added
+
+- **F-Droid metadata images** are now real artwork:
+  - `fastlane/metadata/android/en-US/images/icon.png` (512×512)
+  - `fastlane/metadata/android/en-US/images/featureGraphic.png` (1024×500)
+  - `fastlane/metadata/android/en-US/images/phoneScreenshots/{1,2,3}.png` (960×2142, portrait)
+
+### Build / signing
+
+- **Release signing config hardening** (`app/app/build.gradle.kts`): two sites previously resolved `keystore.properties` via `rootProject.file(...)`, which pointed at the Gradle root (`app/`) rather than the repo root that BUILD.md, the `.example` template, and `.gitignore` all expect. Hoisted a single `repoRoot.resolve("keystore.properties")` to `android{}` scope and consume it from both `signingConfigs` and `buildTypes`. Without this, the `buildTypes.release` selector silently fell back to `signingConfigs.debug` even with a valid `keystore.properties` in place.
+- **Explicit signing-scheme flags**: `enableV1Signing=false`, `enableV2Signing=true`, `enableV3Signing=true`. Belt-and-suspenders against a future AGP minor flipping a scheme off; v1 stays off because `minSdk=29` doesn't need legacy JAR signing; v4 stays off because it's Play-streaming-specific.
+
+### Known issues (unchanged from v0.1.0)
+
+- Always-On FGS re-arm after reboot may not work on Android 14+. Open the keyboard once after boot.
+- WhatsApp pack-add rejection on first attempt; debug-only logging diagnoses (Phase 12 §6 / §16.5).
+- Per-provider model override UI deferred to v0.2.0.
+- Robolectric SDK-36 — 6 upstream tests fail at runner-init.
+
 ## [0.1.0] — 2026-05-13
 
 First release. Forked from HeliBoard v3.9 with the following additive features.

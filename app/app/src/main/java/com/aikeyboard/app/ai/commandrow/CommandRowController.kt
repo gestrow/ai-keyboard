@@ -142,7 +142,11 @@ class CommandRowController @JvmOverloads constructor(
         previewStrip.requestLayout()
         streamJob = scope.launch(Dispatchers.Main) {
             try {
-                backend.rewrite(input, persona.systemPrompt, persona.fewShots)
+                backend.rewrite(
+                    RewritePromptBuilder.build(input, persona),
+                    persona.systemPrompt,
+                    persona.fewShots,
+                )
                     .onCompletion { /* nothing on cancel — preview already cleaned by cancel() */ }
                     .collect { event ->
                         when (event) {

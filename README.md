@@ -48,10 +48,10 @@ Standalone Termux install (no checkout needed):
 
 ```bash
 pkg install -y git curl
-curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh | bash
+curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh -o $HOME/ai-keyboard-setup.sh && bash $HOME/ai-keyboard-setup.sh
 ```
 
-(Direct GitHub-raw alternative: `curl -fsSL https://raw.githubusercontent.com/gestrow/ai-keyboard/main/setup/setup.sh | bash`.)
+(Direct GitHub-raw alternative: `curl -fsSL https://raw.githubusercontent.com/gestrow/ai-keyboard/main/setup/setup.sh -o $HOME/ai-keyboard-setup.sh && bash $HOME/ai-keyboard-setup.sh`.)
 
 `setup.sh` auto-clones the bridge from `https://github.com/gestrow/ai-keyboard.git` when no `--bridge-source` is provided. Override the source via `--bridge-source-git URL[#REF]`.
 

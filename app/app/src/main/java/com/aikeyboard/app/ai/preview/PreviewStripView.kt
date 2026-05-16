@@ -137,7 +137,11 @@ class PreviewStripView @JvmOverloads constructor(
     fun markDone() {
         if (state == State.HIDDEN) return
         state = State.DONE
-        cancelBtn.visibility = GONE
+        // Keep cancelBtn visible alongside the "tap to commit" hint so the user
+        // can dismiss a finished suggestion without committing it. Click handler
+        // routes through onCancelTap() → cancelStreamIfActive(), which no-ops
+        // on an already-finished streamJob.
+        cancelBtn.visibility = VISIBLE
         hintText.visibility = VISIBLE
     }
 

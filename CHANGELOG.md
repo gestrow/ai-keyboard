@@ -98,6 +98,13 @@ These are hard-coded for v0.1.0. A per-provider override field is planned for v0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Termux bridge install hang after `pkg install`** (`TermuxSetupWizardScreen.kt`, `README.md`): the v0.1.1 one-liner `curl … | bash` orphaned the curl process when `setup.sh` re-opened stdin from `/dev/tty` — bash detached fd 0 from the pipe, curl got EPIPE on the unread tail (`curl: (23) Failure writing output to destination, passed N returned 0`), and bash hung at /dev/tty with no more script to execute. Reproduced on Pixel 9 Pro / Android 14+; worked on Pixel 6 only because the script was small enough to fit entirely in the pipe buffer before the redirect. Wizard and README now use the two-step form `curl -fsSL URL -o $HOME/ai-keyboard-setup.sh && bash $HOME/ai-keyboard-setup.sh`, which lets bash read the script from a regular file with fd 0 staying on the controlling TTY throughout. The `setup.sh` `exec </dev/tty` guard from v0.1.1 stays in place: it is a no-op on the new path (fd 0 is already a TTY) and defense-in-depth for users who paste the old one-liner from the cached `bansheebets.com` landing page or third-party docs.
+- **Stale "URL isn't hosted yet" dev note** (`ai_strings.xml` `termux_wizard_step_deploy_dev_note`): the wizard's deploy-step note still claimed the bootstrap URL was a placeholder, which has been false since v0.1.0. Rewritten as an honest developer-escape-hatch note for testing local `setup.sh` edits via `adb push`.
+
+### Planned
+
 - Per-provider model-override field in `BackendsScreen` (defaults to `Provider.defaultModel`).
 - `OpenAiCompatRemoteBackend` refactor — consolidates the Grok branch + a future DeepSeek / Mistral La Plateforme provider into one HTTPS-only OpenAI-compatible backend.
 - Multi-pack creation flow polish (Phase 9b carry-over).

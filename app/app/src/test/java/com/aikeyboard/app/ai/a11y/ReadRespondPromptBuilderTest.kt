@@ -38,9 +38,11 @@ class ReadRespondPromptBuilderTest {
             input.startsWith("I'm reading this on my screen:\n---\n"),
         )
         assertTrue(input.contains(above))
-        assertTrue(input.contains("Compose a response in my voice."))
-        assertFalse(input.contains("Continue or rewrite"))
-        assertTrue(input.endsWith("Just the response text, ready to send."))
+        assertTrue(input.contains("Respond to the latest message above in the Tester voice."))
+        assertFalse(input.contains("Continue or rewrite my response in the"))
+        assertTrue(input.contains("Ignore UI chrome"))
+        assertTrue(input.contains("Preserve the original point of view (1st/2nd/3rd person) and tense."))
+        assertTrue(input.endsWith("Return only the response text, ready to send."))
     }
 
     @Test
@@ -59,8 +61,10 @@ class ReadRespondPromptBuilderTest {
             "expected quoted draft in input, got: $input",
             input.contains("I've started typing my response: \"Sure, that works\""),
         )
-        assertTrue(input.contains("Continue or rewrite my response in my voice."))
-        assertFalse(input.contains("Compose a response in my voice."))
+        assertTrue(input.contains("Continue or rewrite my response in the Tester voice."))
+        assertFalse(input.contains("Respond to the latest message above in the"))
+        assertTrue(input.contains("Ignore UI chrome"))
+        assertTrue(input.contains("Preserve the original point of view (1st/2nd/3rd person) and tense."))
     }
 
     @Test

@@ -84,7 +84,7 @@
 
     <string name="termux_wizard_step_deploy_title">Copy the setup script into Termux</string>
     <string name="termux_wizard_step_deploy_body">Open Termux and paste this command. It downloads our setup script into your home directory; once it\'s there, the keyboard can manage everything else for you.</string>
-    <string name="termux_wizard_step_deploy_dev_note">During development the curl URL above isn\'t hosted yet. From your dev machine: <b>adb push setup/setup.sh /data/local/tmp/</b>; then in Termux run <b>cp /data/local/tmp/setup.sh $HOME/ai-keyboard-setup.sh &amp;&amp; bash $HOME/ai-keyboard-setup.sh</b>.</string>
+    <string name="termux_wizard_step_deploy_dev_note">Developer escape hatch: to test a local edit of <b>setup/setup.sh</b> without round-tripping through bansheebets.com, from your dev machine run <b>adb push setup/setup.sh /data/local/tmp/</b>; then in Termux run <b>cp /data/local/tmp/setup.sh $HOME/ai-keyboard-setup.sh &amp;&amp; bash $HOME/ai-keyboard-setup.sh</b>.</string>
     <string name="termux_wizard_copy_command">Copy command</string>
     <string name="termux_wizard_copied">Command copied</string>
     <string name="termux_wizard_open_termux">Open Termux</string>

@@ -121,8 +121,15 @@ private fun StepInstallTermux(
     ) { Text(stringResource(R.string.termux_wizard_cancel)) }
 }
 
+// Two-step form (curl-to-file, then bash file) instead of `curl … | bash`.
+// The pipe form orphans curl when setup.sh runs `exec </dev/tty` to re-attach
+// read prompts: bash detaches from the pipe, curl gets EPIPE on the unread
+// tail, and the install hangs after `pkg install`. The two-step form keeps
+// fd 0 on the controlling TTY throughout, so `read` prompts work without any
+// stdin redirect inside the script.
 private const val BOOTSTRAP_COMMAND =
-    "curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh | bash"
+    "curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh " +
+        "-o \$HOME/ai-keyboard-setup.sh && bash \$HOME/ai-keyboard-setup.sh"
 
 @Composable
 private fun StepStartBridge(

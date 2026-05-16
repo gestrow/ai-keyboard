@@ -48,12 +48,17 @@ object ReadRespondPromptBuilder {
                 append("I've started typing my response: \"")
                 append(focusedInputText)
                 append("\"\n\n")
-                append("Continue or rewrite my response in my voice. ")
+                append("Continue or rewrite my response in the ")
+                append(persona.name)
+                append(" voice. ")
             } else {
-                append("Compose a response in my voice. ")
+                append("Respond to the latest message above in the ")
+                append(persona.name)
+                append(" voice. ")
             }
-            append("Don't repeat what's already visible above. ")
-            append("Just the response text, ready to send.")
+            append("Ignore UI chrome like empty text fields, button labels, hint text, and timestamps — only respond to conversational content. ")
+            append("Preserve the original point of view (1st/2nd/3rd person) and tense. ")
+            append("Don't repeat what's already visible above. Return only the response text, ready to send.")
         }
 
         return input to persona.systemPrompt

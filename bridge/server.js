@@ -61,9 +61,19 @@ function createServer(options = {}) {
 
     const sse = sseEmitter(reply.raw);
     const abortController = new AbortController();
-    request.raw.on('close', () => {
-      // Client disconnected before stream ended — kill the subprocess.
-      abortController.abort();
+    // Listen on the response stream, not the request. Node fires 'close' on
+    // IncomingMessage as soon as the request body is fully consumed (which
+    // happens before our handler awaits the adapter), so listening on
+    // request.raw fires abort() on every call — adapter.chat then short-
+    // circuits at its `if (abortSignal?.aborted) return;` and we end the SSE
+    // stream with zero events emitted. reply.raw's 'close' fires when the
+    // response stream is closed; writableEnded distinguishes "we called end()"
+    // (writableEnded === true → normal completion) from "client disconnected
+    // mid-stream" (writableEnded === false → abort the subprocess).
+    reply.raw.on('close', () => {
+      if (!reply.raw.writableEnded) {
+        abortController.abort();
+      }
     });
 
     try {

@@ -1,0 +1,11 @@
+Patch release.
+
+Fixed:
+- Bridge /chat returned an empty body for every request (Node close-event race); now streams correctly on all three CLIs.
+- Termux install hang after pkg install on Android 14+; wizard + README use the two-step curl -o … && bash … form.
+- Install URL moved to the canonical https://bansheebets.com/repos/ai-keyboard/setup.sh (old path still 308-redirects).
+
+Improved:
+- Rewrite and Read & Respond now use explicit prompt framing (persona voice, POV/tense preservation, ignore UI chrome).
+- Preview strip keeps its dismiss (✕) button after a suggestion finishes streaming.
+- Real launcher icon replaces the placeholder "AIK" lettering.

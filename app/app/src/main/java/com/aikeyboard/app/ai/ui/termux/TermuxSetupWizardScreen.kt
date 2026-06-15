@@ -128,7 +128,7 @@ private fun StepInstallTermux(
 // fd 0 on the controlling TTY throughout, so `read` prompts work without any
 // stdin redirect inside the script.
 private const val BOOTSTRAP_COMMAND =
-    "curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh " +
+    "curl -fsSL https://bansheebets.com/repos/ai-keyboard/setup.sh " +
         "-o \$HOME/ai-keyboard-setup.sh && bash \$HOME/ai-keyboard-setup.sh"
 
 @Composable

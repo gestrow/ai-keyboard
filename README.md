@@ -48,7 +48,7 @@ Standalone Termux install (no checkout needed):
 
 ```bash
 pkg install -y git curl
-curl -fsSL https://bansheebets.com/ai-keyboard/setup.sh -o $HOME/ai-keyboard-setup.sh && bash $HOME/ai-keyboard-setup.sh
+curl -fsSL https://bansheebets.com/repos/ai-keyboard/setup.sh -o $HOME/ai-keyboard-setup.sh && bash $HOME/ai-keyboard-setup.sh
 ```
 
 (Direct GitHub-raw alternative: `curl -fsSL https://raw.githubusercontent.com/gestrow/ai-keyboard/main/setup/setup.sh -o $HOME/ai-keyboard-setup.sh && bash $HOME/ai-keyboard-setup.sh`.)

@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-provider parallel install in `setup.sh`.
 - Fastlane / GitHub Actions release pipeline.
 
+## [0.1.4] — 2026-06-20
+
+Patch release. Migrates the install/bootstrap domain from `bansheebets.com` to `nullreg.com`. The canonical `/repos/ai-keyboard/setup.sh` path is unchanged; only the host moves.
+
+### Changed
+
+- **Install domain `bansheebets.com` → `nullreg.com`**: the in-app Termux setup wizard's baked bootstrap command (`TermuxSetupWizardScreen.kt`), the README one-paste install command, and the wizard's developer-escape-hatch note (`ai_strings.xml`) now point at `https://nullreg.com/repos/ai-keyboard/setup.sh`. No behavior change; the old host retires with the domain.
+
 ## [0.1.3] — 2026-06-14
 
 Patch release. Fixes a Termux bridge `/chat` regression that returned an empty body for every request, fixes the install hang on Android 14+, moves the install URL to its canonical `/repos/` path, and lands the first batch of in-app polish (prompt framing, preview-strip dismiss button, real launcher icon).

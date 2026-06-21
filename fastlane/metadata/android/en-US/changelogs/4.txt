@@ -1,0 +1,4 @@
+Patch release.
+
+Changed:
+- Install domain moved from bansheebets.com to nullreg.com. The canonical install command is now https://nullreg.com/repos/ai-keyboard/setup.sh. No behavior change; the old host retires with the domain.
